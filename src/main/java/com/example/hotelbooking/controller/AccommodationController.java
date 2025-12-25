@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.service.AccommodationService;
 import com.example.hotelbooking.util.ApiResponse;
@@ -24,7 +25,8 @@ public class AccommodationController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(@RequestParam(defaultValue =  "0") Integer page,
+    public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(
+            @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
         // return new String();
         // return "Hello World";
@@ -35,6 +37,19 @@ public class AccommodationController {
         ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
                 "Accommodations fetched successfully",
                 accommodationSummaryDTOs);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{accommodationId}")
+    public ResponseEntity<ApiResponse<AccommodationDetailDTO>> getAccommodationById(
+            @RequestParam Long accommodationId) {
+
+        var accommodationDetailDTO = accommodationService.getAccommodationById(accommodationId);
+
+        ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
+                "Accommodation fetched successfully",
+                accommodationDetailDTO);
 
         return ResponseEntity.ok(response);
     }

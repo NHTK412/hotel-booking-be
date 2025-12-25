@@ -11,7 +11,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -49,6 +52,9 @@ public class Accommodations extends Base {
     @Column(name = "longitude")
     private Double longitude;
 
+    @Column(name = "image")
+    private String image;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private AccommodationTypeEnum type;
@@ -58,4 +64,8 @@ public class Accommodations extends Base {
 
     @OneToMany(mappedBy = "accommodation")
     private List<AccommodationStaff> staffMembers;
+
+    @ManyToMany
+    @JoinTable(name = "Accommodations_UserFavorites", joinColumns = @JoinColumn(name = "accommodationId"), inverseJoinColumns = @JoinColumn(name = "userId"))
+    private List<Users> favoritedByUsers;
 }

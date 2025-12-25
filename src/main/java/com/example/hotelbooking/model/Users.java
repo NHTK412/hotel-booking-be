@@ -13,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -67,5 +68,8 @@ public class Users extends Base {
 
     @OneToMany(mappedBy = "user")
     private List<AccommodationStaff> accommodationStaffs;
+
+    @ManyToMany(mappedBy = "favoritedByUsers")
+    private List<Accommodations> favoriteAccommodations;
 
 }

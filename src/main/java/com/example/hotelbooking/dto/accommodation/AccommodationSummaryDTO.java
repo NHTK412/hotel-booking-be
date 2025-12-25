@@ -14,6 +14,7 @@ public class AccommodationSummaryDTO {
     private Long accommodationId;
     private String accommodationName;
     private String address;
+    private String image;
     private AccommodationTypeEnum type;
 
     // private Double starRating;
