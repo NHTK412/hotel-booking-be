@@ -24,5 +24,6 @@ public class AccommodationDetailDTO {
     private AccommodationTypeEnum type;
     private List<RoomTypeSummaryDTO> roomTypes;
     private Double starRating;
+    
 
 }
