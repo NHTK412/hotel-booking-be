@@ -13,7 +13,7 @@ public class SecurityConfig {
 
         // http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
-        // http.csrf(csrf -> csrf.disable());
+        http.csrf(csrf -> csrf.disable());
 
         return http.build();
     }
