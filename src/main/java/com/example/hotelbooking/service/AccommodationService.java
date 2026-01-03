@@ -10,31 +10,115 @@ import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationRequestDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO.AccommodationDetailDTOBuilder;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
+import com.example.hotelbooking.enums.AccommodationTypeEnum;
+import com.example.hotelbooking.exception.customer.NotFoundException;
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.model.Accommodations;
 import com.example.hotelbooking.model.RoomTypes;
+import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
+import com.example.hotelbooking.repository.UserRepository;
 
 @Service
 public class AccommodationService {
 
         private final AccommodationRepository accommodationRepository;
+        private final UserRepository userRepository;
 
-        public AccommodationService(AccommodationRepository accommodationRepository) {
+        public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository) {
                 this.accommodationRepository = accommodationRepository;
+                this.userRepository = userRepository;
         }
 
-        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable) {
+        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type) {
                 // return null;
 
-                List<Accommodations> accommodations = accommodationRepository.findByIsDeletedFalse(pageable).toList();
+                List<Accommodations> accommodations = null;
+
+                if (type != null) {
+                        accommodations = accommodationRepository
+                                        .findByIsDeletedFalseAndType(pageable, type)
+                                        .getContent();
+                } else {
+                        accommodations = accommodationRepository
+                                        .findByIsDeletedFalse(pageable)
+                                        .getContent();
+                }
 
                 return accommodations.stream().map((accommodation) -> {
+
+                        Double averageRating = 0.0;
+                        Double minPricePerNight = Double.MAX_VALUE;
+
+                        for (RoomTypes room : accommodation.getRooms()) {
+                                if (room.getIsDeleted()) {
+                                        continue;
+                                }
+                                averageRating += room.getStar();
+                                if (room.getPrice() < minPricePerNight) {
+                                        minPricePerNight = room.getPrice();
+                                }
+                        }
+
+                        averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                                        : averageRating / accommodation.getRooms().size();
+
                         return AccommodationSummaryDTO.builder()
                                         .accommodationId(accommodation.getAccommodationId())
                                         .accommodationName(accommodation.getAccommodationName())
                                         .address(accommodation.getAddress())
-                                        .type(accommodation.getType())
+                                        .type(accommodation.getType().getDescription())
+                                        .image(accommodation.getImage())
+                                        // .averageRating(accommodation.get)
+                                        .averageRating(averageRating)
+                                        .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
+                                        .build();
+                }).toList();
+        }
+
+        public List<AccommodationSummaryDTO> getAllByFavorite(Pageable pageable, Long userId) {
+                // return null;
+
+                List<Accommodations> accommodations = accommodationRepository
+                                .findByIsDeletedFalseAndFavoritedByUsers_id(pageable, userId).toList();
+
+                // if (type != null) {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalseAndType(pageable, type)
+                // .getContent();
+                // } else {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalse(pageable)
+                // .getContent();
+                // }
+
+                return accommodations.stream().map((accommodation) -> {
+
+                        Double averageRating = 0.0;
+                        Double minPricePerNight = Double.MAX_VALUE;
+
+                        for (RoomTypes room : accommodation.getRooms()) {
+                                if (room.getIsDeleted()) {
+                                        continue;
+                                }
+                                averageRating += room.getStar();
+                                if (room.getPrice() < minPricePerNight) {
+                                        minPricePerNight = room.getPrice();
+                                }
+                        }
+
+                        averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                                        : averageRating / accommodation.getRooms().size();
+
+                        return AccommodationSummaryDTO.builder()
+                                        .accommodationId(accommodation.getAccommodationId())
+                                        .accommodationName(accommodation.getAccommodationName())
+                                        .address(accommodation.getAddress())
+                                        .type(accommodation.getType().getDescription())
+                                        .image(accommodation.getImage())
+                                        // .averageRating(accommodation.get)
+                                        .averageRating(averageRating)
+                                        .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                         .build();
                 }).toList();
         }
@@ -103,7 +187,9 @@ public class AccommodationService {
                                 .city(accommodation.getCity())
                                 .latitude(accommodation.getLatitude())
                                 .longitude(accommodation.getLongitude())
-                                .type(accommodation.getType());
+                                .image(accommodation.getImage())
+
+                                .type(accommodation.getType().getDescription());
 
                 Double starRating = 0.0;
 
@@ -141,12 +227,40 @@ public class AccommodationService {
                         starRating = totalStars / rooms.size();
                 }
 
+                List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
+
+                Users user = userRepository.findById(Long.valueOf(4)).orElse(null);
+
+                boolean isFavorite = (user != null && favoritedByUsers.contains(user)) ? true : false;
+
                 builder
                                 .roomTypes(roomTypeSummaries)
-                                .starRating(starRating);
-
-                return builder
                                 .starRating(starRating)
-                                .build();
+                                .isFavorite(isFavorite);
+
+                return builder.build();
+        }
+
+        public AccommodationDetailDTO updateFavoriteAccommodation(Long accommodationId, Boolean isFavorite) {
+                Accommodations accommodation = accommodationRepository.findById(accommodationId)
+                                .orElseThrow(() -> new NotFoundException("Accommodation not found"));
+
+                Users user = userRepository.findById(Long.valueOf(4))
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+
+                List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
+
+                if (isFavorite) {
+                        if (!favoritedByUsers.contains(user)) {
+                                favoritedByUsers.add(user);
+                        }
+                } else {
+                        favoritedByUsers.remove(user);
+                }
+
+                accommodation.setFavoritedByUsers(favoritedByUsers);
+                accommodationRepository.save(accommodation);
+
+                return convertToDetailDTO(accommodation);
         }
 }

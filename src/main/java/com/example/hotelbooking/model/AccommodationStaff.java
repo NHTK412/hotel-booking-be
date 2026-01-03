@@ -28,7 +28,7 @@ public class AccommodationStaff extends Base {
     private Long accommodationStaffId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "roleStaff", nullable = false)
     private AccommodationStaffRoleEnum role;
 
     @ManyToOne

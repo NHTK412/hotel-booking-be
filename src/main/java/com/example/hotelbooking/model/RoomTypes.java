@@ -2,11 +2,14 @@ package com.example.hotelbooking.model;
 
 import java.util.List;
 
+import com.example.hotelbooking.enums.AmenityEnum;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -62,9 +65,16 @@ public class RoomTypes extends Base {
     @Column(name = "image")
     private String image;
 
-    @ManyToMany
-    @JoinTable(name = "roomAmenities", joinColumns = @JoinColumn(name = "roomtypeId"), inverseJoinColumns = @JoinColumn(name = "amentiesId"))
-    private List<Amenties> amenities;
+    // @ManyToMany
+    // @JoinTable(name = "roomAmenities", joinColumns = @JoinColumn(name =
+    // "roomtypeId"), inverseJoinColumns = @JoinColumn(name = "amentiesId"))
+    // private List<Amenties> amenities;
+
+    @Enumerated(EnumType.STRING)
+    @ElementCollection
+    @CollectionTable(name = "roomAmenities", joinColumns = @JoinColumn(name = "roomtypeId"))
+    @Column(name = "amenity")
+    private List<AmenityEnum> amenities; 
 
     @OneToMany(mappedBy = "roomType")
     private List<Rooms> rooms;
