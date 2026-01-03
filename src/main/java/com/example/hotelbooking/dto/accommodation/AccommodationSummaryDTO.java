@@ -15,7 +15,11 @@ public class AccommodationSummaryDTO {
     private String accommodationName;
     private String address;
     private String image;
-    private AccommodationTypeEnum type;
+    // private AccommodationTypeEnum type;
+    private Double averageRating;
+    private Double minPricePerNight;
+    private String type;
+
 
     // private Double starRating;
     // private Double minPrice;

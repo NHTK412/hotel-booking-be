@@ -60,7 +60,7 @@ public class Users extends Base {
     private String avatarUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "roleUser", nullable = false)
     private UserRoleEnum role;
 
     @Column(name = "isActive", nullable = false)

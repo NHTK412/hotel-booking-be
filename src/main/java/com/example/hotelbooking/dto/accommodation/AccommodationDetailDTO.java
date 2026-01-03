@@ -21,9 +21,12 @@ public class AccommodationDetailDTO {
     private String city;
     private Double latitude;
     private Double longitude;
-    private AccommodationTypeEnum type;
+    // private AccommodationTypeEnum type;
+    private String type;
+    private String image;
     private List<RoomTypeSummaryDTO> roomTypes;
     private Double starRating;
-    
+
+    private Boolean isFavorite;
 
 }
