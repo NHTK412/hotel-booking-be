@@ -56,6 +56,10 @@ public class JwtUtil {
         return extractClaims(token).getSubject();
     }
 
+    public String getProviderId(String token) {
+        return extractClaims(token).getSubject();
+    }
+
     public UserRoleEnum getRole(String token) {
         String roleStr = (String) extractClaims(token).get("role");
         return UserRoleEnum.valueOf(roleStr);

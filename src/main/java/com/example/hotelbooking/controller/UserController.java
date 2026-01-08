@@ -4,10 +4,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.user.UserResponseDTO;
+import com.example.hotelbooking.security.CustomerUserDetails;
 import com.example.hotelbooking.service.UserService;
 import com.example.hotelbooking.util.ApiResponse;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,6 +29,20 @@ public class UserController {
         // return new String();
 
         UserResponseDTO userResponseDTO = userService.getUserById(userId);
+
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "User fetched successfully", userResponseDTO);
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getCurrentUser(
+            @AuthenticationPrincipal CustomerUserDetails customerUserDetails) {
+        String providerId = customerUserDetails.getUsername();
+        // return new String();
+
+        UserResponseDTO userResponseDTO = userService.getUserByProviderId(providerId);
 
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "User fetched successfully", userResponseDTO);
 

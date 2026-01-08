@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,14 +38,16 @@ public class Users extends Base {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "email", nullable = false, unique = true)
+    // @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", unique = true)
     private String email;
 
-    @Column(name = "phone", nullable = false)
+    // @Column(name = "phone", nullable = false)
+    @Column(name = "phone")
     private String phone;
 
-    @Column(name = "password", nullable = false)
-    private String password;
+    // @Column(name = "password", nullable = false)
+    // private String password;
 
     @Column(name = "birthday")
     private LocalDateTime birthday;
@@ -71,5 +74,8 @@ public class Users extends Base {
 
     @ManyToMany(mappedBy = "favoritedByUsers")
     private List<Accommodations> favoriteAccommodations;
+
+    @OneToOne(mappedBy = "user")
+    private UserAuthProvider userAuthProvider;
 
 }

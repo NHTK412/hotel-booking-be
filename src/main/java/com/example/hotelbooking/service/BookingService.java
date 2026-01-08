@@ -79,6 +79,11 @@ public class BookingService {
 
         bookingRepository.save(booking);
 
+        // update room status to DELETED (not available)
+        final Rooms room = availableRooms.get(0);
+        room.setStatus(StatusEnum.DELETED);
+        roomRespository.save(room);
+
         // return new BookingDetailDTO(booking);
         return mapToBookingDetailDTO(booking);
     }
