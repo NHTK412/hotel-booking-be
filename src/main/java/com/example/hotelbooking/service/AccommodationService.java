@@ -18,6 +18,7 @@ import com.example.hotelbooking.model.RoomTypes;
 import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
 import com.example.hotelbooking.repository.UserRepository;
+import com.github.davidmoten.geo.GeoHash;
 
 @Service
 public class AccommodationService {
@@ -142,6 +143,13 @@ public class AccommodationService {
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
 
+                // Tính toán và lưu mã hash vị trí địa lý
+                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
+                                accommodationRequestDTO.getLongitude(), 12);
+
+                accommodation.setGeohash(geoHash);
+                // --------------------------------------------
+
                 accommodationRepository.save(accommodation);
 
                 return convertToDetailDTO(accommodation);
@@ -171,6 +179,13 @@ public class AccommodationService {
                 accommodation.setLongitude(accommodationRequestDTO.getLongitude());
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
+
+                // Tính toán và lưu mã hash vị trí địa lý
+                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
+                                accommodationRequestDTO.getLongitude(), 12);
+
+                accommodation.setGeohash(geoHash);
+                // --------------------------------------------
 
                 accommodationRepository.save(accommodation);
 
@@ -263,4 +278,62 @@ public class AccommodationService {
 
                 return convertToDetailDTO(accommodation);
         }
+
+        public List<AccommodationSummaryDTO> findNearbyAccommodations(double latitude, double longitude,
+                        Integer precision, String type) {
+
+                String prefix = GeoHash.encodeHash(latitude, longitude, precision);
+                List<Accommodations> nearbyAccommodations;
+
+                if (type != null && !type.isEmpty()) {
+                        nearbyAccommodations = accommodationRepository.findNearbyWithType(prefix, type);
+                } else {
+                        nearbyAccommodations = accommodationRepository.findNearby(prefix);
+                }
+
+                return nearbyAccommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
+        
+
+        private AccommodationSummaryDTO convertToSummaryDTO(Accommodations accommodation) {
+                Double averageRating = 0.0;
+                Double minPricePerNight = Double.MAX_VALUE;
+
+                for (RoomTypes room : accommodation.getRooms()) {
+                        if (room.getIsDeleted()) {
+                                continue;
+                        }
+                        averageRating += room.getStar();
+                        if (room.getPrice() < minPricePerNight) {
+                                minPricePerNight = room.getPrice();
+                        }
+                }
+
+                averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                                : averageRating / accommodation.getRooms().size();
+
+                return AccommodationSummaryDTO.builder()
+                                .accommodationId(accommodation.getAccommodationId())
+                                .accommodationName(accommodation.getAccommodationName())
+                                .address(accommodation.getAddress())
+                                .type(accommodation.getType().getDescription())
+                                .image(accommodation.getImage())
+                                .averageRating(averageRating)
+                                .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
+                                .build();
+        }
+
+        public List<AccommodationSummaryDTO> searchAccommodations(String keyword, Pageable pageable) {
+                List<Accommodations> accommodations = accommodationRepository
+                                .searchByKeyword(keyword, pageable).toList();
+
+                return accommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
+
 }

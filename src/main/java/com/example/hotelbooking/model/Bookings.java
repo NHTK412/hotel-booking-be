@@ -1,6 +1,9 @@
 package com.example.hotelbooking.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.example.hotelbooking.enums.BookingStatusEnum;
 
@@ -13,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -33,11 +37,17 @@ public class Bookings extends Base {
     @Column(name = "bookingId")
     private Long bookingId;
 
-    @Column(name = "checkInDate", nullable = false)
-    private LocalDate checkInDate;
+    // @Column(name = "checkInDate", nullable = false)
+    // private LocalDate checkInDate;
 
-    @Column(name = "checkOutDate", nullable = false)
-    private LocalDate checkOutDate;
+    // @Column(name = "checkOutDate", nullable = false)
+    // private LocalDate checkOutDate; 
+
+    @Column(name = "checkInAt", nullable = false)
+    private LocalDateTime checkInAt;
+
+    @Column(name = "checkOutAt", nullable = false)
+    private LocalDateTime checkOutAt;
 
     @Column(name = "originalPrice", nullable = false)
     private Double originalPrice;
@@ -74,5 +84,8 @@ public class Bookings extends Base {
     @OneToOne
     @JoinColumn(name = "reviewId", nullable = true)
     private Review review = null;
+
+    @OneToMany(mappedBy = "booking")
+    private List<Payment> payments = new ArrayList<>();
 
 }

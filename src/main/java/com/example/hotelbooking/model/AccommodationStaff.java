@@ -2,10 +2,13 @@ package com.example.hotelbooking.model;
 
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 
+import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -24,6 +27,7 @@ import lombok.Setter;
 public class AccommodationStaff extends Base {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "accommodationStaffId")
     private Long accommodationStaffId;
 

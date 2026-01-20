@@ -15,4 +15,6 @@ public interface UserAuthProviderRepository extends JpaRepository<UserAuthProvid
 
     Optional<UserAuthProvider> findByProviderUserId(String providerUserId);
 
+    
+
 }

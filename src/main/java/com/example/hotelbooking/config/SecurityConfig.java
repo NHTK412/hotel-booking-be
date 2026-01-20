@@ -18,93 +18,98 @@ import com.example.hotelbooking.filter.JwtAuthFilter;
 @Configuration
 public class SecurityConfig {
 
-    final private AuthenticationEntryPointException authenticationEntryPointException;
+        final private AuthenticationEntryPointException authenticationEntryPointException;
 
-    final private AccessDeniedHandlerException accessDeniedHandlerException;
+        final private AccessDeniedHandlerException accessDeniedHandlerException;
 
-    final private JwtAuthFilter jwtAuthFilter;
+        final private JwtAuthFilter jwtAuthFilter;
 
-    SecurityConfig(
-            AuthenticationEntryPointException authenticationEntryPointException,
-            AccessDeniedHandlerException accessDeniedHandlerException,
-            JwtAuthFilter jwtAuthFilter) {
-        this.authenticationEntryPointException = authenticationEntryPointException;
-        this.accessDeniedHandlerException = accessDeniedHandlerException;
-        this.jwtAuthFilter = jwtAuthFilter;
-    }
+        SecurityConfig(
+                        AuthenticationEntryPointException authenticationEntryPointException,
+                        AccessDeniedHandlerException accessDeniedHandlerException,
+                        JwtAuthFilter jwtAuthFilter) {
+                this.authenticationEntryPointException = authenticationEntryPointException;
+                this.accessDeniedHandlerException = accessDeniedHandlerException;
+                this.jwtAuthFilter = jwtAuthFilter;
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        // http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                // http.cors(cors -> cors.disable());
 
-        // http.csrf(csrf -> csrf.disable());
+                // http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
-        // return http.build();
+                // http.csrf(csrf -> csrf.disable());
 
-        http.cors(cors -> cors.configurationSource((request) -> {
+                // return http.build();
 
-            CorsConfiguration corsConfiguration = new CorsConfiguration();
+                http.cors(cors -> cors.configurationSource((request) -> {
 
-            corsConfiguration.setAllowedOrigins(List.of("*"));
+                        CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-            corsConfiguration.setAllowedMethods(List.of(
-                    "GET",
-                    "POST",
-                    "PUT",
-                    "DELETE", "PATCH",
-                    "OPTIONS"));
+                        corsConfiguration.setAllowedOrigins(List.of("*"));
 
-            corsConfiguration.setAllowedHeaders(List.of(
-                    "Authorization",
-                    "Content-Type",
-                    "Accept",
-                    "Cache-Control",
-                    "X-Requested-With",
-                    "X-Client-Version",
-                    "X-Refresh-Token"));
+                        corsConfiguration.setAllowedMethods(List.of(
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "DELETE", "PATCH",
+                                        "OPTIONS"));
 
-            corsConfiguration.setExposedHeaders(List.of("Authorization"));
+                        corsConfiguration.setAllowedHeaders(List.of(
+                                        "Authorization",
+                                        "Content-Type",
+                                        "Accept",
+                                        "Cache-Control",
+                                        "X-Requested-With",
+                                        "X-Client-Version",
+                                        "X-Refresh-Token"));
 
-            corsConfiguration.setAllowCredentials(null);
+                        corsConfiguration.setExposedHeaders(List.of("Authorization"));
 
-            return corsConfiguration;
+                        corsConfiguration.setAllowCredentials(null);
 
-        }));
+                        return corsConfiguration;
 
-        http.csrf((csrf) -> csrf.disable());
+                }));
 
-        http.sessionManagement(
-                (session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                http.csrf((csrf) -> csrf.disable());
 
-        http.authorizeHttpRequests(auth -> auth
-                // Cho phép truy cập không cần xác thực đến các endpoint sau
-                // cho phép truy cập mà không kiểm tra authentication/roles
-                .requestMatchers(
-                        "/auth/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**",
-                        "/images/**"
-                // "/api/v3/api-docs",
-                // "/api/v3/api-docs/swagger-config",
-                // "/swagger-ui.html",
-                // "/swagger-ui/**"
-                )
-                .permitAll()
-                // Yêu cầu xác thực cho các request khác
-                .anyRequest().authenticated());
+                http.sessionManagement(
+                                (session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // Xử lý ngoại lệ liên quan đến xác thực và phân quyền
-        http.exceptionHandling(ex -> ex
-                .authenticationEntryPoint(authenticationEntryPointException) // 401
-                .accessDeniedHandler(accessDeniedHandlerException)); // 403
+                http.authorizeHttpRequests(auth -> auth
 
-        // Dùng để lọc JWT trước khi đến UsernamePasswordAuthenticationFilter
-        http.addFilterBefore(jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class);
+                                // .anyRequest().permitAll());
+                                // Cho phép truy cập không cần xác thực đến các endpoint sau
+                                // cho phép truy cập mà không kiểm tra authentication/roles
+                                .requestMatchers(
+                                                "/auth/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/v3/api-docs/**",
+                                                "/images/**",
+                                                "/zalopay/callback"
+                                // "/api/v3/api-docs",
+                                // "/api/v3/api-docs/swagger-config",
+                                // "/swagger-ui.html",
+                                // "/swagger-ui/**"
+                                )
+                                .permitAll()
+                                // Yêu cầu xác thực cho các request khác
+                                .anyRequest().authenticated());
 
-        return http.build();
+                // Xử lý ngoại lệ liên quan đến xác thực và phân quyền
+                http.exceptionHandling(ex -> ex
+                                .authenticationEntryPoint(authenticationEntryPointException) // 401
+                                .accessDeniedHandler(accessDeniedHandlerException)); // 403
 
-    }
+                // Dùng để lọc JWT trước khi đến UsernamePasswordAuthenticationFilter
+                http.addFilterBefore(jwtAuthFilter,
+                                UsernamePasswordAuthenticationFilter.class);
+
+                return http.build();
+
+        }
 }

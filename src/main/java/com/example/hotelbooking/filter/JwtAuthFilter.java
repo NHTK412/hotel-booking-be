@@ -28,135 +28,136 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+        @Autowired
+        private JwtUtil jwtUtil;
 
-    // @Autowired
-    // private Auth accountService;
+        // @Autowired
+        // private Auth accountService;
 
-    // @Autowired
-    // private CustomerRepository customerRepository;
+        // @Autowired
+        // private CustomerRepository customerRepository;
 
-    // @Autowired
-    // private AdminRepository adminRepository;
+        // @Autowired
+        // private AdminRepository adminRepository;
 
-    final UserAuthProviderRepository userAuthProviderRepository;
+        final UserAuthProviderRepository userAuthProviderRepository;
 
-    public JwtAuthFilter(UserAuthProviderRepository userAuthProviderRepository) {
-        this.userAuthProviderRepository = userAuthProviderRepository;
-    }
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-
-        final String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer")) {
-            filterChain.doFilter(request, response);
-            return;
+        public JwtAuthFilter(UserAuthProviderRepository userAuthProviderRepository) {
+                this.userAuthProviderRepository = userAuthProviderRepository;
         }
 
-        final String token = authorizationHeader.substring(7);
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                        FilterChain filterChain)
+                        throws ServletException, IOException {
 
-        final String providerId = jwtUtil.getProviderId(token);
+                final String authorizationHeader = request.getHeader("Authorization");
+                if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer")) {
+                        filterChain.doFilter(request, response);
+                        return;
+                }
 
-        UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
-                .orElseThrow(() -> new NotFoundException("UserAuthProvider Not Found"));
+                final String token = authorizationHeader.substring(7);
 
-        Users user = userAuthProvider.getUser();
+                final String providerId = jwtUtil.getProviderId(token);
 
-        CustomerUserDetails userDetails = CustomerUserDetails.builder()
-                .providerId(userAuthProvider.getProviderUserId())
-                .authorities(
-                        List.of(new SimpleGrantedAuthority(user.getRole().name())))
-                .build();
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("UserAuthProvider Not Found"));
 
-        // final String authorizationHeader = request.getHeader("Authorization");
+                Users user = userAuthProvider.getUser();
 
-        // if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer"))
-        // {
-        // filterChain.doFilter(request, response);
-        // return;
-        // }
+                CustomerUserDetails userDetails = CustomerUserDetails.builder()
+                                .providerId(userAuthProvider.getProviderUserId())
+                                .authorities(
+                                                List.of(new SimpleGrantedAuthority(user.getRole().name())))
+                                .build();
 
-        // final String token = authorizationHeader.substring(7);
+                // final String authorizationHeader = request.getHeader("Authorization");
 
-        // final String username = jwtUtil.getUserName(token);
+                // if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer"))
+                // {
+                // filterChain.doFilter(request, response);
+                // return;
+                // }
 
-        // final RoleEnum role = jwtUtil.getRole(token);
+                // final String token = authorizationHeader.substring(7);
 
-        // if (username != null &&
-        // SecurityContextHolder.getContext().getAuthentication() == null) {
-        // if (jwtUtil.isTokenVaid(token)) {
-        // // UserDetails customerUserDetails =
-        // // accountService.getAccountByUsername(username);
+                // final String username = jwtUtil.getUserName(token);
 
-        // // UserDetails userDetails = null;
-        // CustomerUserDetails userDetails = null;
+                // final RoleEnum role = jwtUtil.getRole(token);
 
-        // if (role == RoleEnum.ROLE_CUSTOMER) {
-        // Customer customer = customerRepository.findByUserName(username)
-        // .orElseThrow(() -> new NotFoundException("Username không tồn tại"));
+                // if (username != null &&
+                // SecurityContextHolder.getContext().getAuthentication() == null) {
+                // if (jwtUtil.isTokenVaid(token)) {
+                // // UserDetails customerUserDetails =
+                // // accountService.getAccountByUsername(username);
 
-        // // userDetails = User.builder()
-        // // .username(customer.getUserName())
-        // // .password(customer.getPassword())
-        // // .authorities(List.of(new
-        // // SimpleGrantedAuthority(RoleEnum.ROLE_CUSTOMER.name())))
-        // // .build();
-        // userDetails = CustomerUserDetails.builder()
-        // .userName(customer.getUserName())
-        // .password(customer.getPassword())
-        // .userId(customer.getCustomerId())
-        // .authorities(List.of(new
-        // SimpleGrantedAuthority(RoleEnum.ROLE_CUSTOMER.name())))
-        // .build();
-        // } else if (role == RoleEnum.ROLE_ADMIN) {
-        // Admin admin = adminRepository.findByUserName(username)
-        // .orElseThrow(() -> new NotFoundException("Username không tồn tại"));
+                // // UserDetails userDetails = null;
+                // CustomerUserDetails userDetails = null;
 
-        // // userDetails = User.builder()
-        // // .username(admin.getUserName())
-        // // .password(admin.getPassword())
-        // // .authorities(List.of(new
-        // SimpleGrantedAuthority(RoleEnum.ROLE_ADMIN.name())))
-        // // .build();
+                // if (role == RoleEnum.ROLE_CUSTOMER) {
+                // Customer customer = customerRepository.findByUserName(username)
+                // .orElseThrow(() -> new NotFoundException("Username không tồn tại"));
 
-        // userDetails = CustomerUserDetails.builder()
-        // .userName(admin.getUserName())
-        // .password(admin.getPassword())
-        // .userId(admin.getAdminId())
-        // .authorities(List.of(new SimpleGrantedAuthority(RoleEnum.ROLE_ADMIN.name())))
-        // .build();
+                // // userDetails = User.builder()
+                // // .username(customer.getUserName())
+                // // .password(customer.getPassword())
+                // // .authorities(List.of(new
+                // // SimpleGrantedAuthority(RoleEnum.ROLE_CUSTOMER.name())))
+                // // .build();
+                // userDetails = CustomerUserDetails.builder()
+                // .userName(customer.getUserName())
+                // .password(customer.getPassword())
+                // .userId(customer.getCustomerId())
+                // .authorities(List.of(new
+                // SimpleGrantedAuthority(RoleEnum.ROLE_CUSTOMER.name())))
+                // .build();
+                // } else if (role == RoleEnum.ROLE_ADMIN) {
+                // Admin admin = adminRepository.findByUserName(username)
+                // .orElseThrow(() -> new NotFoundException("Username không tồn tại"));
 
-        // } else {
-        // throw new RuntimeException("Role không tồn tại");
-        // }
+                // // userDetails = User.builder()
+                // // .username(admin.getUserName())
+                // // .password(admin.getPassword())
+                // // .authorities(List.of(new
+                // SimpleGrantedAuthority(RoleEnum.ROLE_ADMIN.name())))
+                // // .build();
 
-        // UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new
-        // UsernamePasswordAuthenticationToken(
-        // userDetails, null, userDetails.getAuthorities());
+                // userDetails = CustomerUserDetails.builder()
+                // .userName(admin.getUserName())
+                // .password(admin.getPassword())
+                // .userId(admin.getAdminId())
+                // .authorities(List.of(new SimpleGrantedAuthority(RoleEnum.ROLE_ADMIN.name())))
+                // .build();
 
-        // usernamePasswordAuthenticationToken.setDetails(new
-        // WebAuthenticationDetails(request));
+                // } else {
+                // throw new RuntimeException("Role không tồn tại");
+                // }
 
-        // SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                // UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new
+                // UsernamePasswordAuthenticationToken(
+                // userDetails, null, userDetails.getAuthorities());
 
-        // }
-        // }
+                // usernamePasswordAuthenticationToken.setDetails(new
+                // WebAuthenticationDetails(request));
 
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-        // tạo đối tượng xác thực với thông tin user và quyền hạn
+                // SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
-        usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetails(request));
-        // dùng để lưu thông tin về request
+                // }
+                // }
 
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        // lưu thông tin xác thực vào SecurityContext
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                // tạo đối tượng xác thực với thông tin user và quyền hạn
 
-        filterChain.doFilter(request, response);
+                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetails(request));
+                // dùng để lưu thông tin về request
 
-    }
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                // lưu thông tin xác thực vào SecurityContext
+
+                filterChain.doFilter(request, response);
+
+        }
 
 }

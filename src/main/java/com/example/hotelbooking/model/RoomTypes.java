@@ -1,5 +1,6 @@
 package com.example.hotelbooking.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.example.hotelbooking.enums.AmenityEnum;
@@ -46,6 +47,17 @@ public class RoomTypes extends Base {
     @Column(name = "price", nullable = false)
     private Double price;
 
+    @Column(name = "discount")
+    private Double discount;
+
+    // Số người
+    @Column(name = "capacity", nullable = false)
+    private Integer capacity;
+
+    // Số phòng ngủ
+    @Column(name = "bedroom", nullable = false)
+    private Integer bedroom;
+
     @ManyToOne()
     @JoinColumn(name = "accommodationId", nullable = false)
     private Accommodations accommodation;
@@ -74,9 +86,9 @@ public class RoomTypes extends Base {
     @ElementCollection
     @CollectionTable(name = "roomAmenities", joinColumns = @JoinColumn(name = "roomtypeId"))
     @Column(name = "amenity")
-    private List<AmenityEnum> amenities; 
+    private List<AmenityEnum> amenities;
 
-    @OneToMany(mappedBy = "roomType")
-    private List<Rooms> rooms;
+    @OneToMany(mappedBy = "roomType", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
+    private List<Rooms> rooms = new ArrayList<>();
 
 }

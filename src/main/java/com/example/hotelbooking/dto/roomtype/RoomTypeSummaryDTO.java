@@ -14,4 +14,8 @@ public class RoomTypeSummaryDTO {
     private Integer star;
     private Double price;
     private String image;
+
+    // Thêm ịa địa chỉ phòng
+    private String address;
+
 }
