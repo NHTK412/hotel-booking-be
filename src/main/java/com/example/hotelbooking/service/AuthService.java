@@ -230,7 +230,7 @@ public class AuthService {
     }
 
     @Transactional
-    public String sendOtp(String email) {
+    public Boolean sendOtp(String email) {
 
         UserAuthProvider userAuthProvider = userAuthProviderRepository
                 .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL, email)
@@ -256,7 +256,8 @@ public class AuthService {
 
         mailService.sendEmail(email, "Your OTP Code", "Your OTP code is: " + otp);
 
-        return otp;
+        // return otp;
+        return true;
     }
 
     // @Transactional

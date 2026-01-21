@@ -26,4 +26,14 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
             """)
     Page<Location> findByKeyword(String keyword, org.springframework.data.domain.Pageable pageable);
 
+    List<Location> findByDistrictNameContainingIgnoreCase(String districtName);
+
+    List<Location> findByProvinceNameContainingIgnoreCase(String provinceName);
+
+    @Query("""
+                SELECT l
+                FROM Location l
+                WHERE l.districtName LIKE %:subAdministrativeArea% AND l.provinceName LIKE %:administrativeArea%
+            """)
+    List<Location> findCurrentLocation(String subAdministrativeArea, String administrativeArea);
 }

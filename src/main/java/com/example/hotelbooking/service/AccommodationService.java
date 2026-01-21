@@ -50,14 +50,25 @@ public class AccommodationService {
 
                         Double averageRating = 0.0;
                         Double minPricePerNight = Double.MAX_VALUE;
+                        Double discountMinPricePerNight = Double.MAX_VALUE;
+                        Double finalMinPrice = Double.MAX_VALUE;
 
                         for (RoomTypes room : accommodation.getRooms()) {
                                 if (room.getIsDeleted()) {
                                         continue;
                                 }
                                 averageRating += room.getStar();
-                                if (room.getPrice() < minPricePerNight) {
-                                        minPricePerNight = room.getPrice();
+
+                                Double roomPrice = room.getPrice();
+                                Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
+
+                                Double finalPrice = roomPrice - (roomPrice * discount / 100);
+
+                                if (finalPrice < finalMinPrice) {
+                                        minPricePerNight = roomPrice;
+                                        discountMinPricePerNight = discount;
+
+                                        finalMinPrice = finalPrice;
                                 }
                         }
 
@@ -71,6 +82,7 @@ public class AccommodationService {
                                         .type(accommodation.getType().getDescription())
                                         .image(accommodation.getImage())
                                         // .averageRating(accommodation.get)
+                                        .discountMinPricePerNight(discountMinPricePerNight)
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                         .build();
@@ -235,6 +247,8 @@ public class AccommodationService {
                                                 .star(room.getStar())
                                                 .price(room.getPrice())
                                                 .image(room.getImage())
+                                                .discount(room.getDiscount())
+                                                .address(accommodation.getAddress())
                                                 .build());
 
                                 totalStars += room.getStar();
@@ -296,24 +310,49 @@ public class AccommodationService {
                                 .toList();
         }
 
-        
-
         private AccommodationSummaryDTO convertToSummaryDTO(Accommodations accommodation) {
+
                 Double averageRating = 0.0;
                 Double minPricePerNight = Double.MAX_VALUE;
+                Double discountMinPricePerNight = Double.MAX_VALUE;
+                Double finalMinPrice = Double.MAX_VALUE;
 
                 for (RoomTypes room : accommodation.getRooms()) {
                         if (room.getIsDeleted()) {
                                 continue;
                         }
                         averageRating += room.getStar();
-                        if (room.getPrice() < minPricePerNight) {
-                                minPricePerNight = room.getPrice();
+
+                        Double roomPrice = room.getPrice();
+                        Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
+
+                        Double finalPrice = roomPrice - (roomPrice * discount / 100);
+
+                        if (finalPrice < finalMinPrice) {
+                                minPricePerNight = roomPrice;
+                                discountMinPricePerNight = discount;
+
+                                finalMinPrice = finalPrice;
                         }
                 }
 
                 averageRating = accommodation.getRooms().isEmpty() ? 0.0
                                 : averageRating / accommodation.getRooms().size();
+                // Double averageRating = 0.0;
+                // Double minPricePerNight = Double.MAX_VALUE;
+
+                // for (RoomTypes room : accommodation.getRooms()) {
+                // if (room.getIsDeleted()) {
+                // continue;
+                // }
+                // averageRating += room.getStar();
+                // if (room.getPrice() < minPricePerNight) {
+                // minPricePerNight = room.getPrice();
+                // }
+                // }
+
+                // averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                // : averageRating / accommodation.getRooms().size();
 
                 return AccommodationSummaryDTO.builder()
                                 .accommodationId(accommodation.getAccommodationId())
@@ -323,6 +362,8 @@ public class AccommodationService {
                                 .image(accommodation.getImage())
                                 .averageRating(averageRating)
                                 .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
+                                .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0
+                                                : discountMinPricePerNight)
                                 .build();
         }
 
@@ -334,6 +375,5 @@ public class AccommodationService {
                                 .map(this::convertToSummaryDTO)
                                 .toList();
         }
-
 
 }

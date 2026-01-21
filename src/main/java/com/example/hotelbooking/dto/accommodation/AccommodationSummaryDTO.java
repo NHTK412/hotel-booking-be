@@ -18,6 +18,7 @@ public class AccommodationSummaryDTO {
     // private AccommodationTypeEnum type;
     private Double averageRating;
     private Double minPricePerNight;
+    private Double discountMinPricePerNight; // Giá đã giảm
     private String type;
 
 

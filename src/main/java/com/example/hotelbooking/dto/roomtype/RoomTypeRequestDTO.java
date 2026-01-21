@@ -24,6 +24,7 @@ public class RoomTypeRequestDTO {
     private Long accommodationId;
     private Integer capacity;
     private Integer bedroom;
+    private String description;
 
     // private String localtion; // Nghĩa là ở đâu đó
 }

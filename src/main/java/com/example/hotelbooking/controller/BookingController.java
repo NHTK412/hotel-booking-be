@@ -27,81 +27,106 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/bookings")
 public class BookingController {
 
-    final BookingService bookingService;
+        final BookingService bookingService;
 
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
+        public BookingController(BookingService bookingService) {
+                this.bookingService = bookingService;
+        }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<BookingDetailDTO>> createBooking(
+        @PostMapping
+        public ResponseEntity<ApiResponse<BookingDetailDTO>> createBooking(
 
-            @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
-            @RequestBody BookingRequestDTO bookingRequestDTO) {
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @RequestBody BookingRequestDTO bookingRequestDTO) {
 
-        String username = customerUserDetails.getUsername();
+                String username = customerUserDetails.getUsername();
 
-        BookingDetailDTO bookingDetailDTO = bookingService.createBooking(username, bookingRequestDTO);
+                BookingDetailDTO bookingDetailDTO = bookingService.createBooking(username, bookingRequestDTO);
 
-        ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking created successfully",
-                bookingDetailDTO);
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking created successfully",
+                                bookingDetailDTO);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    @PreAuthorize("hasRole('HOST') or hasRole('CUSTOMER')")
-    @GetMapping("/{bookingId}")
-    public ResponseEntity<ApiResponse<BookingDetailDTO>> getBookingById(
-            @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
-            @PathVariable Long bookingId) {
+        @PreAuthorize("hasRole('HOST') or hasRole('CUSTOMER')")
+        @GetMapping("/{bookingId}")
+        public ResponseEntity<ApiResponse<BookingDetailDTO>> getBookingById(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long bookingId) {
 
-        final String providerId = customerUserDetails.getProviderId();
+                final String providerId = customerUserDetails.getProviderId();
 
-        BookingDetailDTO bookingDetailDTO = bookingService.getBookingById(
-                providerId, bookingId);
+                BookingDetailDTO bookingDetailDTO = bookingService.getBookingById(
+                                providerId, bookingId);
 
-        ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking retrieved successfully",
-                bookingDetailDTO);
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking retrieved successfully",
+                                bookingDetailDTO);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    @PreAuthorize("hasRole('HOST')")
-    @GetMapping("/accommodation/{accommodationId}")
-    public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingByAccommodationId(
-            @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
-            @PathVariable Long accommodationId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+        @PreAuthorize("hasRole('HOST')")
+        @GetMapping("/accommodation/{accommodationId}")
+        public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingByAccommodationId(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
 
-        String providerId = customerUserDetails.getProviderId();
+                String providerId = customerUserDetails.getProviderId();
 
-        List<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingByAccommodationId(providerId,
-                accommodationId, page,
-                size);
+                List<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingByAccommodationId(providerId,
+                                accommodationId, page,
+                                size);
 
-        ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true, "Booking retrieved successfully",
-                bookingSummaryDTO);
+                ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
+                                "Booking retrieved successfully",
+                                bookingSummaryDTO);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    @PreAuthorize("hasRole('HOST')")
-    @PatchMapping("/{bookingId}/status")
-    public ResponseEntity<ApiResponse<BookingDetailDTO>>  updateBookingStatus(
-            @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
-            @PathVariable Long bookingId,
-            @RequestParam BookingStatusEnum status) {
+        @PreAuthorize("hasRole('HOST')")
+        @PatchMapping("/{bookingId}/status")
+        public ResponseEntity<ApiResponse<BookingDetailDTO>> updateBookingStatus(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long bookingId,
+                        @RequestParam BookingStatusEnum status) {
 
-        String providerId = customerUserDetails.getProviderId();
+                String providerId = customerUserDetails.getProviderId();
 
-        BookingDetailDTO bookingDetailDTO = bookingService.updateBookingStatus(providerId,
-                bookingId, status);
+                BookingDetailDTO bookingDetailDTO = bookingService.updateBookingStatus(providerId,
+                                bookingId, status);
 
-        ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking status updated successfully",
-                bookingDetailDTO);
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking status updated successfully",
+                                bookingDetailDTO);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
+
+        // Lấy các đơn hàng theo tháng của khách hàng
+        @PreAuthorize("hasRole('CUSTOMER')")
+        @GetMapping("/me")
+        public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getMyBookingsByMonth(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @RequestParam(required = false) Integer day,
+                        @RequestParam(required = false) Integer month,
+                        @RequestParam(required = false) Integer year,
+                        @RequestParam(required = false) BookingStatusEnum status,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+
+                String username = customerUserDetails.getUsername();
+
+                List<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingsByCustomerAndMonth(
+                                username, day, month, year, status, page, size);
+
+                ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
+                                "Bookings retrieved successfully",
+                                bookingSummaryDTO);
+
+                return ResponseEntity.ok(response);
+        }
 
 }

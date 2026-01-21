@@ -26,4 +26,5 @@ public class RoomTypeDetailDTO {
     private String localtion; // Nghĩa là ở đâu đó
     private Integer capacity;
     private Integer bedroom;
+    private String description;
 }

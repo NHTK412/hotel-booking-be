@@ -1,6 +1,7 @@
 package com.example.hotelbooking.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,4 +37,21 @@ class LocationController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<LocationResponseDTO>> getCurrentLocation(
+            @RequestParam(required = false) String subAdministrativeArea, @RequestParam(required = false) String administrativeArea) {
+
+        LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea);
+
+        final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
+                true,
+                "Get current location successfully",
+                location);
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    
 }

@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
@@ -76,4 +77,10 @@ public class Accommodations extends Base {
     // Thêm cột này để lưu mã hash vị trí địa lý
     @Column(name = "geohash", length = 12)
     private String geohash;
+
+
+    @ManyToOne
+    @JoinColumn(name = "locationId", nullable = false)
+    private Location location;
+
 }

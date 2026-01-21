@@ -1,5 +1,7 @@
 package com.example.hotelbooking.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -36,209 +38,253 @@ import jakarta.transaction.Transactional;
 @Service
 public class BookingService {
 
-    final BookingRepository bookingRepository;
+        final BookingRepository bookingRepository;
 
-    final RoomTypeRepository roomTypeRepository;
+        final RoomTypeRepository roomTypeRepository;
 
-    final RoomRespository roomRespository;
+        final RoomRespository roomRespository;
 
-    final UserRepository userRepository;
+        final UserRepository userRepository;
 
-    final UserAuthProviderRepository userAuthProviderRepository;
+        final UserAuthProviderRepository userAuthProviderRepository;
 
-    public BookingService(BookingRepository bookingRepository, RoomTypeRepository roomTypeRepository,
-            RoomRespository roomRespository, UserRepository userRepository,
-            UserAuthProviderRepository userAuthProviderRepository) {
-        this.bookingRepository = bookingRepository;
-        this.roomTypeRepository = roomTypeRepository;
-        this.roomRespository = roomRespository;
-        this.userRepository = userRepository;
-        this.userAuthProviderRepository = userAuthProviderRepository;
-    }
-
-    public BookingDetailDTO createBooking(String username,
-            BookingRequestDTO bookingRequestDTO) {
-
-        // final RoomTypes roomTypes =
-        // roomTypeRepository.findById(bookingRequestDTO.getRoomTypeId())
-        // .orElseThrow(() -> new NotFoundException("Room type not found"));
-
-        final List<Rooms> availableRooms = roomRespository
-                .findRoomAvailableByRoomTypeId(bookingRequestDTO.getRoomTypeId(),
-                        bookingRequestDTO.getCheckInDate().atTime(14, 0),
-                        bookingRequestDTO.getCheckOutDate().atTime(12, 0));
-
-        if (availableRooms.isEmpty()) {
-            throw new NotFoundException("No available rooms for the selected room type");
+        public BookingService(BookingRepository bookingRepository, RoomTypeRepository roomTypeRepository,
+                        RoomRespository roomRespository, UserRepository userRepository,
+                        UserAuthProviderRepository userAuthProviderRepository) {
+                this.bookingRepository = bookingRepository;
+                this.roomTypeRepository = roomTypeRepository;
+                this.roomRespository = roomRespository;
+                this.userRepository = userRepository;
+                this.userAuthProviderRepository = userAuthProviderRepository;
         }
 
-        // final Users user = userRepository.findById(Long.valueOf())
-        // .orElseThrow(() -> new NotFoundException("User not found"));
+        public BookingDetailDTO createBooking(String username,
+                        BookingRequestDTO bookingRequestDTO) {
 
-        final UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(username)
-                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+                // final RoomTypes roomTypes =
+                // roomTypeRepository.findById(bookingRequestDTO.getRoomTypeId())
+                // .orElseThrow(() -> new NotFoundException("Room type not found"));
 
-        final Users user = userAuthProvider.getUser();
+                final List<Rooms> availableRooms = roomRespository
+                                .findRoomAvailableByRoomTypeId(bookingRequestDTO.getRoomTypeId(),
+                                                bookingRequestDTO.getCheckInDate().atTime(14, 0),
+                                                bookingRequestDTO.getCheckOutDate().atTime(12, 0));
 
-        Bookings booking = new Bookings();
+                if (availableRooms.isEmpty()) {
+                        throw new NotFoundException("No available rooms for the selected room type");
+                }
 
-        // set room
-        booking.setRoom(availableRooms.get(0));
+                // final Users user = userRepository.findById(Long.valueOf())
+                // .orElseThrow(() -> new NotFoundException("User not found"));
 
-        // set user
-        booking.setUser(user);
+                final UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(username)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-        // set customer info
-        booking.setCustomerName(bookingRequestDTO.getCustomerName());
-        booking.setCustomerPhone(bookingRequestDTO.getCustomerPhone());
-        booking.setCustomerEmail(bookingRequestDTO.getCustomerEmail());
+                final Users user = userAuthProvider.getUser();
 
-        // set booking dates
-        booking.setCheckInAt(bookingRequestDTO.getCheckInDate().atTime(12, 0));
-        booking.setCheckOutAt(bookingRequestDTO.getCheckOutDate().atTime(14, 0));
+                Bookings booking = new Bookings();
 
-        // set prices
-        Integer numOfNights = (int) (bookingRequestDTO.getCheckOutDate().toEpochDay()
-                - bookingRequestDTO.getCheckInDate().toEpochDay());
-        Double originalPrice = availableRooms.get(0).getRoomType().getPrice() * numOfNights;
+                // set room
+                booking.setRoom(availableRooms.get(0));
 
-        booking.setOriginalPrice(originalPrice);
-        Double discount = availableRooms.get(0).getRoomType().getDiscount();
-        if (discount == null) {
-            discount = 0.0;
-        }
-        booking.setDiscountedPrice(discount);
-        Double finalPrice = booking.getOriginalPrice() - (booking.getOriginalPrice() * discount / 100);
-        booking.setFinalPrice(finalPrice);
+                // set user
+                booking.setUser(user);
 
-        // set status
-        booking.setStatus(BookingStatusEnum.WAITING_FOR_PAYMENT);
+                // set customer info
+                booking.setCustomerName(bookingRequestDTO.getCustomerName());
+                booking.setCustomerPhone(bookingRequestDTO.getCustomerPhone());
+                booking.setCustomerEmail(bookingRequestDTO.getCustomerEmail());
 
-        bookingRepository.save(booking);
+                // set booking dates
+                booking.setCheckInAt(bookingRequestDTO.getCheckInDate().atTime(12, 0));
+                booking.setCheckOutAt(bookingRequestDTO.getCheckOutDate().atTime(14, 0));
 
-        // update room status to DELETED (not available)
-        // final Rooms room = availableRooms.get(0);
-        // room.setStatus(StatusEnum.DELETED);
-        // roomRespository.save(room);
+                // set prices
+                Integer numOfNights = (int) (bookingRequestDTO.getCheckOutDate().toEpochDay()
+                                - bookingRequestDTO.getCheckInDate().toEpochDay());
+                Double originalPrice = availableRooms.get(0).getRoomType().getPrice() * numOfNights;
 
-        // return new BookingDetailDTO(booking);
-        return mapToBookingDetailDTO(booking);
-    }
+                booking.setOriginalPrice(originalPrice);
+                Double discount = availableRooms.get(0).getRoomType().getDiscount();
+                if (discount == null) {
+                        discount = 0.0;
+                }
+                booking.setDiscountedPrice(discount);
+                Double finalPrice = booking.getOriginalPrice() - (booking.getOriginalPrice() * discount / 100);
+                booking.setFinalPrice(finalPrice);
 
-    public BookingDetailDTO getBookingById(String providerId, Long bookingId) {
+                // set status
+                booking.setStatus(BookingStatusEnum.WAITING_FOR_PAYMENT);
 
-        UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
-                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+                bookingRepository.save(booking);
 
-        UserRoleEnum userRole = userAuthProvider.getUser().getRole();
+                // update room status to DELETED (not available)
+                // final Rooms room = availableRooms.get(0);
+                // room.setStatus(StatusEnum.DELETED);
+                // roomRespository.save(room);
 
-        final Bookings booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException("Booking not found"));
-
-        if (userRole == UserRoleEnum.ROLE_HOST) {
-            Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                    .map(
-                            staff -> staff.getAccommodation().getAccommodationId())
-                    .collect(Collectors.toSet());
-
-            Long bookingAccommodationId = booking.getRoom().getRoomType().getAccommodation().getAccommodationId();
-
-            if (!staffAccommodations.contains(bookingAccommodationId)) {
-                throw new AccessDeniedException("Booking not found for the provider");
-            }
-
-        } else if (userRole == UserRoleEnum.ROLE_CUSTOMER) {
-            Long bookingUserId = booking.getUser().getId();
-            Long providerUserId = userAuthProvider.getUser().getId();
-
-            if (!bookingUserId.equals(providerUserId)) {
-                throw new AccessDeniedException("Booking not found for the customer");
-            }
+                // return new BookingDetailDTO(booking);
+                return mapToBookingDetailDTO(booking);
         }
 
-        return mapToBookingDetailDTO(booking);
-    }
+        public BookingDetailDTO getBookingById(String providerId, Long bookingId) {
 
-    public List<BookingSummaryDTO> getBookingByAccommodationId(String providerId, Long accommodationId, int page,
-            int size) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-        UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
-                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+                UserRoleEnum userRole = userAuthProvider.getUser().getRole();
 
-        Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                .map(
-                        staff -> staff.getAccommodation().getAccommodationId())
-                .collect(Collectors.toSet());
+                final Bookings booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-        if (!staffAccommodations.contains(accommodationId)) {
-            throw new AccessDeniedException("Accommodation not found for the provider");
+                if (userRole == UserRoleEnum.ROLE_HOST) {
+                        Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                        .map(
+                                                        staff -> staff.getAccommodation().getAccommodationId())
+                                        .collect(Collectors.toSet());
+
+                        Long bookingAccommodationId = booking.getRoom().getRoomType().getAccommodation()
+                                        .getAccommodationId();
+
+                        if (!staffAccommodations.contains(bookingAccommodationId)) {
+                                throw new AccessDeniedException("Booking not found for the provider");
+                        }
+
+                } else if (userRole == UserRoleEnum.ROLE_CUSTOMER) {
+                        Long bookingUserId = booking.getUser().getId();
+                        Long providerUserId = userAuthProvider.getUser().getId();
+
+                        if (!bookingUserId.equals(providerUserId)) {
+                                throw new AccessDeniedException("Booking not found for the customer");
+                        }
+                }
+
+                return mapToBookingDetailDTO(booking);
         }
 
-        Pageable pageable = PageRequest.of(page, size);
+        public List<BookingSummaryDTO> getBookingByAccommodationId(String providerId, Long accommodationId, int page,
+                        int size) {
 
-        Page<Bookings> bookingsPage = bookingRepository
-                .findByRoom_RoomType_Accommodation_AccommodationId(accommodationId, pageable);
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-        List<BookingSummaryDTO> bookingSummaryDTOs = bookingsPage.stream()
-                .map(booking -> BookingSummaryDTO.builder()
-                        .bookingId(booking.getBookingId())
-                        .customerName(booking.getCustomerName())
-                        .customerEmail(booking.getCustomerEmail())
-                        .customerPhone(booking.getCustomerPhone())
-                        .status(booking.getStatus().name())
-                        .finalPrice(booking.getFinalPrice())
-                        .build())
-                .toList();
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
 
-        return bookingSummaryDTOs;
-    }
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
 
-    private BookingDetailDTO mapToBookingDetailDTO(Bookings booking) {
-        return BookingDetailDTO.builder()
-                .bookingId(booking.getBookingId())
-                // customer info
-                .customerName(booking.getCustomerName())
-                .customerPhone(booking.getCustomerPhone())
-                .customerEmail(booking.getCustomerEmail())
-                // booking dates
-                .checkInAt(booking.getCheckInAt())
-                .checkOutAt(booking.getCheckOutAt())
-                // prices
-                .originalPrice(booking.getOriginalPrice())
-                .discountedPrice(booking.getDiscountedPrice())
-                .finalPrice(booking.getFinalPrice())
-                // booking status
-                .status(booking.getStatus().name())
-                .build();
-    }
+                Pageable pageable = PageRequest.of(page, size);
 
-    @Transactional
-    public BookingDetailDTO updateBookingStatus(String providerId, Long bookingId, BookingStatusEnum status) {
+                Page<Bookings> bookingsPage = bookingRepository
+                                .findByRoom_RoomType_Accommodation_AccommodationId(accommodationId, pageable);
 
-        UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
-                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+                List<BookingSummaryDTO> bookingSummaryDTOs = bookingsPage.stream()
+                                .map(booking -> BookingSummaryDTO.builder()
+                                                .bookingId(booking.getBookingId())
+                                                .customerName(booking.getCustomerName())
+                                                .customerEmail(booking.getCustomerEmail())
+                                                .customerPhone(booking.getCustomerPhone())
+                                                .status(booking.getStatus().name())
+                                                .finalPrice(booking.getFinalPrice())
+                                                .build())
+                                .toList();
 
-        Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                .map(
-                        staff -> staff.getAccommodation().getAccommodationId())
-                .collect(Collectors.toSet());
-
-        final Bookings booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NotFoundException("Booking not found"));
-
-        Long bookingAccommodationId = booking.getRoom().getRoomType().getAccommodation().getAccommodationId();
-
-        if (!staffAccommodations.contains(bookingAccommodationId)) {
-            throw new AccessDeniedException("Booking not found for the provider");
+                return bookingSummaryDTOs;
         }
 
-        if (status == BookingStatusEnum.CHECKED_OUT || status == BookingStatusEnum.CANCELED) {
-            throw new ConflictException("Cannot update booking status to CHECKED_OUT or CANCELED");
+        private BookingDetailDTO mapToBookingDetailDTO(Bookings booking) {
+                return BookingDetailDTO.builder()
+                                .bookingId(booking.getBookingId())
+                                // customer info
+                                .customerName(booking.getCustomerName())
+                                .customerPhone(booking.getCustomerPhone())
+                                .customerEmail(booking.getCustomerEmail())
+                                // booking dates
+                                .checkInAt(booking.getCheckInAt())
+                                .checkOutAt(booking.getCheckOutAt())
+                                // prices
+                                .originalPrice(booking.getOriginalPrice())
+                                .discountedPrice(booking.getDiscountedPrice())
+                                .finalPrice(booking.getFinalPrice())
+                                // booking status
+                                .status(booking.getStatus().name())
+                                .build();
         }
 
-        booking.setStatus(status);
-        bookingRepository.save(booking);
+        @Transactional
+        public BookingDetailDTO updateBookingStatus(String providerId, Long bookingId, BookingStatusEnum status) {
 
-        return mapToBookingDetailDTO(booking);
-    }
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                final Bookings booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(() -> new NotFoundException("Booking not found"));
+
+                Long bookingAccommodationId = booking.getRoom().getRoomType().getAccommodation().getAccommodationId();
+
+                if (!staffAccommodations.contains(bookingAccommodationId)) {
+                        throw new AccessDeniedException("Booking not found for the provider");
+                }
+
+                if (status == BookingStatusEnum.CHECKED_OUT || status == BookingStatusEnum.CANCELED) {
+                        throw new ConflictException("Cannot update booking status to CHECKED_OUT or CANCELED");
+                }
+
+                booking.setStatus(status);
+                bookingRepository.save(booking);
+
+                return mapToBookingDetailDTO(booking);
+        }
+
+        public List<BookingSummaryDTO> getBookingsByCustomerAndMonth(
+                        String providerId,Integer day, Integer month, Integer year, BookingStatusEnum status, int page, int size) {
+
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                System.err.println("userAuthProvider: " + userAuthProvider.getProviderUserId());
+
+                Pageable pageable = PageRequest.of(page, size);
+
+                LocalDateTime start = null;
+                LocalDateTime end = null;
+
+                if (day != null && month != null && year != null) {
+                        start = LocalDate.of(year, month, day).atStartOfDay();
+                        end = start.plusDays(1); // nghĩa là đến hết ngày đó
+                } else if (month != null && year != null) {
+                        start = LocalDate.of(year, month, 1).atStartOfDay();
+                        end = start.plusMonths(1); // nghĩa là đến hết tháng đó
+                }
+
+                Page<Bookings> bookingsPage = bookingRepository.findBookingsByCustomer(
+                                start,
+                                end,
+                                status,
+                                userAuthProvider.getProviderUserId(),
+                                pageable);
+
+                return bookingsPage.stream()
+                                .map(booking -> BookingSummaryDTO.builder()
+                                                .bookingId(booking.getBookingId())
+                                                .customerName(booking.getCustomerName())
+                                                .customerEmail(booking.getCustomerEmail())
+                                                .customerPhone(booking.getCustomerPhone())
+                                                .status(booking.getStatus().name())
+                                                .finalPrice(booking.getFinalPrice())
+                                                .checkInAt(booking.getCheckInAt())
+                                                .build())
+                                .toList();
+
+        }
+
 }

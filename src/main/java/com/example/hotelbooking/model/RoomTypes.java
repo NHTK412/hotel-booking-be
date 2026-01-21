@@ -58,6 +58,9 @@ public class RoomTypes extends Base {
     @Column(name = "bedroom", nullable = false)
     private Integer bedroom;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @ManyToOne()
     @JoinColumn(name = "accommodationId", nullable = false)
     private Accommodations accommodation;
@@ -68,6 +71,7 @@ public class RoomTypes extends Base {
     // "roomId"))
     // @Column(name = "amenity")
     // private List<RoomAmenityEnum> amenity;
+    
 
     @ElementCollection
     @CollectionTable(name = "roomImagesPreview", joinColumns = @JoinColumn(name = "roomtypeId"))

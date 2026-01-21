@@ -53,11 +53,12 @@ public class AuthController {
 
     // Tạo mã OTP và gửi đến email người dùng
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<Map<String, String>>> sendOtp(@RequestParam String email) {
-        String otp = authService.sendOtp(email);
-        final Map<String, String> responseData = new HashMap<>();
-        responseData.put("otp", otp); // Chỉ để minh họa, không nên
-        return ResponseEntity.ok(new ApiResponse<>(true, "OTP sent successfully", responseData));
+    // public ResponseEntity<ApiResponse<Map<String, String>>> sendOtp(@RequestParam String email) {
+    public ResponseEntity<ApiResponse<Boolean>> sendOtp(@RequestParam String email) {
+        Boolean otp = authService.sendOtp(email);
+        // final Map<String, Boolean> responseData = new HashMap<>();
+        // responseData.put("is", otp); // Chỉ để minh họa, không nên
+        return ResponseEntity.ok(new ApiResponse<>(true, "OTP sent successfully", otp));
     }
 
     // xÁC THỰC MÃ OTP

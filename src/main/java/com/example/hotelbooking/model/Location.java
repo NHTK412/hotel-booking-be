@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,6 +40,10 @@ public class Location extends Base {
 
     @Column(name = "longitude", columnDefinition = "DOUBLE PRECISION")
     private Double longitude; // Tọa độ trung tâm của Quận
+
+
+    @OneToMany(mappedBy = "location")
+    private java.util.List<Accommodations> accommodations;
 
 }
 

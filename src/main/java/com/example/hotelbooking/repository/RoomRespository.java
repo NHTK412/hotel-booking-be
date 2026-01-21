@@ -56,4 +56,5 @@ public interface RoomRespository extends JpaRepository<Rooms, Long> {
             LocalDateTime checkInAt,
             LocalDateTime checkOutAt);
 
+
 }

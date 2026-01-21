@@ -1,5 +1,7 @@
 package com.example.hotelbooking.dto.booking;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,4 +17,7 @@ public class BookingSummaryDTO {
     private String customerPhone;
     private String status;
     private Double finalPrice;
+
+    private LocalDateTime checkInAt;
+
 }

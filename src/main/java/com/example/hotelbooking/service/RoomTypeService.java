@@ -79,6 +79,7 @@ public class RoomTypeService {
                 .price(roomType.getPrice())
                 .image(roomType.getImage())
                 .address(roomType.getAccommodation().getAddress()) // Thêm địa chỉ vào DTO
+                .discount(roomType.getDiscount())
                 .build()).toList();
     }
 
@@ -110,7 +111,9 @@ public class RoomTypeService {
         roomType.setDiscount(roomTypeRequestDTO.getDiscount());
         roomType.setImage(roomTypeRequestDTO.getImage());
         roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
-        // Set other fields as necessary
+        roomType.setDescription(roomTypeRequestDTO.getDescription());
+        roomType.setCapacity(roomTypeRequestDTO.getCapacity());
+        roomType.setBedroom(roomTypeRequestDTO.getBedroom());
 
         roomType.setAmenities(roomTypeRequestDTO.getAmenities());
         roomType.setAccommodation(accommodation);
@@ -276,6 +279,10 @@ public class RoomTypeService {
                 .price(roomType.getPrice())
                 .amenities(roomType.getAmenities())
                 .localtion(roomType.getAccommodation().getAddress())
+                .bedroom(roomType.getBedroom())
+                .description(roomType.getDescription())
+                .capacity(roomType.getCapacity())
+                .discount(roomType.getDiscount())
                 .build();
     }
 
@@ -293,6 +300,7 @@ public class RoomTypeService {
                 .star(roomType.getStar())
                 .price(roomType.getPrice())
                 .image(roomType.getImage())
+                .discount(roomType.getDiscount())
                 .address(roomType.getAccommodation().getAddress()) // Thêm địa chỉ vào DTO
                 .build()).toList();
     }
