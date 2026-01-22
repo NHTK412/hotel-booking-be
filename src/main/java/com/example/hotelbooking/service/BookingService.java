@@ -2,7 +2,9 @@ package com.example.hotelbooking.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -127,7 +129,9 @@ public class BookingService {
                 return mapToBookingDetailDTO(booking);
         }
 
+        @Transactional
         public BookingDetailDTO getBookingById(String providerId, Long bookingId) {
+
 
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
@@ -136,6 +140,11 @@ public class BookingService {
 
                 final Bookings booking = bookingRepository.findById(bookingId)
                                 .orElseThrow(() -> new NotFoundException("Booking not found"));
+
+
+                // System.err.println("Review: " + booking.getReview().getReviewId());
+
+                
 
                 if (userRole == UserRoleEnum.ROLE_HOST) {
                         Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
@@ -162,6 +171,7 @@ public class BookingService {
                 return mapToBookingDetailDTO(booking);
         }
 
+        @Transactional
         public List<BookingSummaryDTO> getBookingByAccommodationId(String providerId, Long accommodationId, int page,
                         int size) {
 
@@ -197,6 +207,7 @@ public class BookingService {
         }
 
         private BookingDetailDTO mapToBookingDetailDTO(Bookings booking) {
+
                 return BookingDetailDTO.builder()
                                 .bookingId(booking.getBookingId())
                                 // customer info
@@ -212,6 +223,13 @@ public class BookingService {
                                 .finalPrice(booking.getFinalPrice())
                                 // booking status
                                 .status(booking.getStatus().name())
+                                .accommodationName(booking.getRoom().getRoomType().getAccommodation()
+                                                .getAccommodationName())
+                                .roomType(booking.getRoom().getRoomType().getName())
+                                .roomNumber(booking.getRoom().getName())
+                                .lat(booking.getRoom().getRoomType().getAccommodation().getLatitude())
+                                .lng(booking.getRoom().getRoomType().getAccommodation().getLongitude())
+                                .reviewId((booking.getReview() != null) ? booking.getReview().getReviewId() : null)
                                 .build();
         }
 
@@ -235,9 +253,11 @@ public class BookingService {
                         throw new AccessDeniedException("Booking not found for the provider");
                 }
 
-                if (status == BookingStatusEnum.CHECKED_OUT || status == BookingStatusEnum.CANCELED) {
-                        throw new ConflictException("Cannot update booking status to CHECKED_OUT or CANCELED");
-                }
+                // if (status == BookingStatusEnum.CHECKED_OUT || status ==
+                // BookingStatusEnum.CANCELED) {
+                // throw new ConflictException("Cannot update booking status to CHECKED_OUT or
+                // CANCELED");
+                // }
 
                 booking.setStatus(status);
                 bookingRepository.save(booking);
@@ -246,7 +266,8 @@ public class BookingService {
         }
 
         public List<BookingSummaryDTO> getBookingsByCustomerAndMonth(
-                        String providerId,Integer day, Integer month, Integer year, BookingStatusEnum status, int page, int size) {
+                        String providerId, Integer day, Integer month, Integer year, BookingStatusEnum status, int page,
+                        int size) {
 
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
@@ -282,8 +303,357 @@ public class BookingService {
                                                 .status(booking.getStatus().name())
                                                 .finalPrice(booking.getFinalPrice())
                                                 .checkInAt(booking.getCheckInAt())
+                                                .checkOutAt(booking.getCheckOutAt())
                                                 .build())
                                 .toList();
+
+        }
+
+        @Transactional
+        public BookingDetailDTO cancelBookingByCustomer(String providerId, Long bookingId) {
+
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                final Bookings booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(() -> new NotFoundException("Booking not found"));
+                Long bookingUserId = booking.getUser().getId();
+                Long providerUserId = userAuthProvider.getUser().getId();
+                if (!bookingUserId.equals(providerUserId)) {
+                        throw new AccessDeniedException("Booking not found for the customer");
+                }
+                if (booking.getStatus() == BookingStatusEnum.CANCELED) {
+                        throw new ConflictException("Booking is already canceled");
+                }
+                booking.setStatus(BookingStatusEnum.CANCELED);
+                bookingRepository.save(booking);
+
+                return mapToBookingDetailDTO(booking);
+
+        }
+
+        // Các endpoint check booking của host
+
+        public List<BookingSummaryDTO> getBookingsByAccommodationAndStatus(
+                        String providerId, Long accommodationId, BookingStatusEnum status, int page, int size) {
+
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                Pageable pageable = PageRequest.of(page, size);
+
+                Page<Bookings> bookingsPage = bookingRepository
+                                .findBookingsByHost(
+                                                accommodationId, status, pageable);
+
+                List<BookingSummaryDTO> bookingSummaryDTOs = bookingsPage.stream()
+                                .map(booking -> BookingSummaryDTO.builder()
+                                                .bookingId(booking.getBookingId())
+                                                .customerName(booking.getCustomerName())
+                                                .customerEmail(booking.getCustomerEmail())
+                                                .customerPhone(booking.getCustomerPhone())
+                                                .status(booking.getStatus().name())
+                                                .finalPrice(booking.getFinalPrice())
+                                                .build())
+                                .toList();
+
+                return bookingSummaryDTOs;
+        }
+
+        public BookingDetailDTO updateBookingStatusByHost(
+                        String providerId, Long bookingId, BookingStatusEnum status) {
+                return updateBookingStatus(providerId, bookingId, status);
+        }
+
+        public Long getTodayGuests(
+                        String providerId, Long accommodationId) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+                LocalDateTime todayEnd = todayStart.plusDays(1);
+
+                Long count = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckInAt().isBefore(todayEnd)
+                                                && booking.getCheckOutAt().isAfter(todayStart)
+                                                && (booking.getStatus() == BookingStatusEnum.PENDING
+                                                                || booking.getStatus() == BookingStatusEnum.PENDING))
+                                .count();
+
+                return count;
+        }
+
+        public Long getTodayCheckIns(
+                        String providerId, Long accommodationId) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+                LocalDateTime todayEnd = todayStart.plusDays(1);
+
+                Long count = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckInAt().isAfter(todayStart)
+                                                && booking.getCheckInAt().isBefore(todayEnd)
+                                                && (booking.getStatus() == BookingStatusEnum.CHECKED_IN))
+                                .count();
+
+                return count;
+        }
+
+        public Double getTodayRevenue(
+                        String providerId, Long accommodationId) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+                LocalDateTime todayEnd = todayStart.plusDays(1);
+
+                Double revenue = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckOutAt().isAfter(todayStart)
+                                                && booking.getCheckOutAt().isBefore(todayEnd)
+                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
+                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .mapToDouble(booking -> booking.getFinalPrice())
+                                .sum();
+
+                return revenue;
+        }
+
+        public Double getMonthRevenue(
+                        String providerId, Long accommodationId) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+                LocalDateTime monthEnd = monthStart.plusMonths(1);
+
+                Double revenue = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckOutAt().isAfter(monthStart)
+                                                && booking.getCheckOutAt().isBefore(monthEnd)
+                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
+                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .mapToDouble(booking -> booking.getFinalPrice())
+                                .sum();
+
+                return revenue;
+        }
+
+        public Double getRevenueInDateRange(
+                        String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Double revenue = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckOutAt().isAfter(startDateTime)
+                                                && booking.getCheckOutAt().isBefore(endDateTime)
+                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
+                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .mapToDouble(booking -> booking.getFinalPrice())
+                                .sum();
+
+                return revenue;
+        }
+
+        public List<Map<String, Double>> getMonthlyRevenue(
+                        String providerId, Long accommodationId, int year) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                List<Map<String, Double>> monthlyRevenues = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
+                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .filter(booking -> booking.getCheckOutAt().getYear() == year)
+                                .collect(Collectors.groupingBy(
+                                                booking -> booking.getCheckOutAt().getMonthValue(),
+                                                Collectors.summingDouble(booking -> booking.getFinalPrice())))
+                                .entrySet().stream()
+                                .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
+                                .map(entry -> Map.of("month", entry.getKey().doubleValue(), "revenue",
+                                                entry.getValue()))
+                                .collect(Collectors.toList());
+
+                return monthlyRevenues;
+
+        }
+
+        public List<Map<String, Double>> getYearlyRevenue(
+                        String providerId, Long accommodationId) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                List<Map<String, Double>> yearlyRevenues = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
+                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .collect(Collectors.groupingBy(
+                                                booking -> booking.getCheckOutAt().getYear(),
+                                                Collectors.summingDouble(booking -> booking.getFinalPrice())))
+                                .entrySet().stream()
+                                .sorted((e1, e2) -> e1.getKey().compareTo(e2.getKey()))
+                                .map(entry -> Map.of("year", entry.getKey().doubleValue(), "revenue", entry.getValue()))
+                                .collect(Collectors.toList());
+
+                return yearlyRevenues;
+
+        }
+
+        // {
+        // "success": true,
+        // "message": "Statistics fetched successfully",
+        // "data": {
+        // "totalBookings": 120,
+        // "completedBookings": 95,
+        // "canceledBookings": 25,
+        // "totalRevenue": 180000000.0,
+        // "averageBookingValue": 1500000.0,
+        // "occupancyRate": 78.5,
+        // "totalGuests": 260,
+        // "totalNights": 410
+        // }
+        // }
+
+        public Map<String, Object> getBookingStatistics(
+                        String providerId, Long accommodationId,
+                        LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Map<String, Object> statistics = bookingRepository.fetchBookingStatistics(
+                                accommodationId, startDateTime, endDateTime);
+
+                return statistics;
+
+        }
+
+        public List<Map<String, Object>> getRevenueByRoomType(
+                        String providerId, Long accommodationId,
+                        LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(
+                                                staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                List<Map<String, Object>> trends = bookingRepository.fetchBookingTrends(
+                                accommodationId, startDateTime, endDateTime);
+
+                return trends;
 
         }
 

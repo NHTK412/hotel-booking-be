@@ -67,6 +67,7 @@ public class ZaloPayConfig {
      * 
      * Ví dụ: "https://yourdomain.com/payment-result"
      */
-    public static final String REDIRECT_URL = "http://localhost:5173/my-orders";
+    // public static final String REDIRECT_URL = "http://localhost:5173/my-orders";
+    public static final String REDIRECT_URL = "hotelbooking://calendar_detail";
 
 }

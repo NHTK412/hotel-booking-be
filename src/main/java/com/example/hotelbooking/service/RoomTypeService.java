@@ -52,8 +52,9 @@ public class RoomTypeService {
     }
 
     public List<RoomTypeSummaryDTO> getAllRoomTypes(
-            String district,
-            String city,
+            // String district,
+            // String city,
+            Long locationId,
             LocalDate checkInDate,
             LocalDate checkOutDate,
             Integer capacity,
@@ -64,8 +65,9 @@ public class RoomTypeService {
         LocalDateTime checkOutAt = checkOutDate != null ? checkOutDate.atTime(12, 0, 0) : null;
 
         List<RoomTypes> roomTypes = roomTypeRepository.findAvailableRoomTypes(
-                normalizeFilter(district),
-                normalizeFilter(city),
+                    // normalizeFilter(district),
+                    // normalizeFilter(city),
+                    locationId,
                 normalizePositiveInteger(capacity),
                 normalizePositiveInteger(bedroom),
                 checkInAt,

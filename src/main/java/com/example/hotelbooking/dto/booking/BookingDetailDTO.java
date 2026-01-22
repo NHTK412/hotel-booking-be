@@ -32,4 +32,14 @@ public class BookingDetailDTO {
     // booking status
     private String status;
 
+    // Thông tin phòng
+    private String accommodationName;
+    private String roomType;
+    private String roomNumber;
+    private Double lat;
+    private Double lng;
+
+    // Thông tin đánh giá (nếu có)
+    private Long reviewId;
+
 }

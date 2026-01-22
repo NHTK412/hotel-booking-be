@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.hotelbooking.enums.AccommodationTypeEnum;
 import com.example.hotelbooking.model.Accommodations;
 
 @Repository
@@ -39,4 +40,30 @@ public interface AccommodationRepository extends JpaRepository<Accommodations, L
                                 LOWER(a.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
                                 """)
         Page<Accommodations> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+        @Query("""
+                        SELECT a
+                        FROM Accommodations a
+                        WHERE a.isDeleted = false
+                        AND (:locationId IS NULL OR a.location.id = :locationId)
+                        AND (:type IS NULL OR a.type = :type)
+                                """)
+        Page<Accommodations> findByIsDeletedFalseAndLocationId(Pageable pageable, Long locationId,
+                        AccommodationTypeEnum type);
+
+        @Query("""
+                        SELECT a
+                        FROM Accommodations a
+                        WHERE a.isDeleted = false
+                        AND a.location.id = :locationId
+                        AND a.type = :type
+                        ORDER BY COALESCE(
+                                (SELECT AVG(CAST(rt.star AS double))
+                                        FROM RoomTypes rt
+                                        WHERE rt.accommodation.accommodationId = a.accommodationId
+                                        AND rt.star IS NOT NULL),
+                                0) ASC
+                                """)
+        Page<Accommodations> findByLocationIdAndTypeSortedByStar(@Param("locationId") Long locationId,
+                        @Param("type") AccommodationTypeEnum type, Pageable pageable);
 }

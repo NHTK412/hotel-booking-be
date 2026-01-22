@@ -67,8 +67,9 @@ public class RoomTypeController {
 
         @GetMapping("/search")
         public ResponseEntity<ApiResponse<List<RoomTypeSummaryDTO>>> getAllRoomTypes(
-                        @RequestParam(required = false) String district,
-                        @RequestParam(required = false) String city,
+                        // @RequestParam(required = false) String district,
+                        // @RequestParam(required = false) String city,
+                        @RequestParam(required = false) Long locationId,
                         @RequestParam(required = false) String checkInDate,
                         @RequestParam(required = false) String checkOutDate,
                         @RequestParam(required = false) Integer capacity,
@@ -82,8 +83,9 @@ public class RoomTypeController {
                 LocalDate parsedCheckOutDate = parseDateOrNull(checkOutDate);
 
                 List<RoomTypeSummaryDTO> roomTypes = roomTypeService.getAllRoomTypes(
-                                district,
-                                city,
+                                // district,
+                                // city,
+                                locationId,
                                 parsedCheckInDate,
                                 parsedCheckOutDate,
                                 capacity,

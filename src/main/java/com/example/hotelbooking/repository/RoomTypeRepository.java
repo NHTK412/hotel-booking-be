@@ -39,9 +39,9 @@ public interface RoomTypeRepository extends JpaRepository<RoomTypes, Long> {
                 FROM RoomTypes rt
                 JOIN rt.accommodation a
                 JOIN rt.rooms r
+                JOIN a.location l
                 WHERE
-                    (:district IS NULL OR a.district = :district)
-                    AND (:city IS NULL OR a.city = :city)
+                    l.locationId = :locationId
                     AND (:capacity IS NULL OR rt.capacity >= :capacity)
                     AND (:bedroom IS NULL OR rt.bedroom >= :bedroom)
                     AND (
@@ -58,8 +58,9 @@ public interface RoomTypeRepository extends JpaRepository<RoomTypes, Long> {
                     )
                 """)
     Page<RoomTypes> findAvailableRoomTypes(
-            String district,
-            String city,
+            // String district,
+            // String city,
+            Long locationId,
             Integer capacity,
             Integer bedroom,
             LocalDateTime checkInAt,

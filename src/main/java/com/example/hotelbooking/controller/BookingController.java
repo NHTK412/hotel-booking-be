@@ -11,7 +11,9 @@ import com.example.hotelbooking.security.CustomerUserDetails;
 import com.example.hotelbooking.service.BookingService;
 import com.example.hotelbooking.util.ApiResponse;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -125,6 +127,251 @@ public class BookingController {
                 ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
                                 "Bookings retrieved successfully",
                                 bookingSummaryDTO);
+
+                return ResponseEntity.ok(response);
+        }
+
+        @PatchMapping("/{bookingId}/cancel")
+        public ResponseEntity<ApiResponse<BookingDetailDTO>> cancelBooking(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long bookingId) {
+
+                String username = customerUserDetails.getUsername();
+
+                BookingDetailDTO bookingDetailDTO = bookingService.cancelBookingByCustomer(username, bookingId);
+
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking cancelled successfully",
+                                bookingDetailDTO);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Các endpoint check booking của host
+
+        @PreAuthorize("hasRole('HOST')")
+        @GetMapping("/host/accommodation/{accommodationId}")
+        public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingsForHostByAccommodation(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam BookingStatusEnum status) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                List<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingsByAccommodationAndStatus(
+                                providerId, accommodationId, status, page, size);
+
+                ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
+                                "Bookings retrieved successfully",
+                                bookingSummaryDTO);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // @PreAuthorize("hasRole('HOST')")
+        // @PatchMapping("/host/{bookingId}/status")
+        // public ResponseEntity<ApiResponse<BookingDetailDTO>>
+        // updateBookingStatusByHost(
+        // @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+        // @PathVariable Long bookingId,
+        // @RequestParam BookingStatusEnum status) {
+
+        // String providerId = customerUserDetails.getProviderId();
+
+        // BookingDetailDTO bookingDetailDTO =
+        // bookingService.updateBookingStatusByHost(providerId,
+        // bookingId, status);
+
+        // ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true,
+        // "Booking status updated successfully",
+        // bookingDetailDTO);
+
+        // return ResponseEntity.ok(response);
+        // }
+
+        // @PreAuthorize("hasRole('HOST')")
+
+        // Các endpoint thống kê
+        // Số lượng khách hôm nay
+        @GetMapping("/host/{accommodationId}/today-guests")
+        public ResponseEntity<ApiResponse<Long>> getTodayGuests(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Long todayGuests = bookingService.getTodayGuests(
+                                providerId, accommodationId);
+
+                ApiResponse<Long> response = new ApiResponse<>(true,
+                                "Today's guests retrieved successfully",
+                                todayGuests);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Số lượng khách hôm nay đã checkin
+
+        @GetMapping("/host/{accommodationId}/today-checkins")
+        public ResponseEntity<ApiResponse<Long>> getTodayCheckIns(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Long todayCheckIns = bookingService.getTodayCheckIns(
+                                providerId, accommodationId);
+
+                ApiResponse<Long> response = new ApiResponse<>(true,
+                                "Today's check-ins retrieved successfully",
+                                todayCheckIns);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Doanh thu hôm nay
+
+        @GetMapping("/host/{accommodationId}/today-revenue")
+        public ResponseEntity<ApiResponse<Double>> getTodayRevenue(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Double todayRevenue = bookingService.getTodayRevenue(
+                                providerId, accommodationId);
+
+                ApiResponse<Double> response = new ApiResponse<>(true,
+                                "Today's revenue retrieved successfully",
+                                todayRevenue);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Doanh thu tháng này
+
+        @GetMapping("/host/{accommodationId}/month-revenue")
+        public ResponseEntity<ApiResponse<Double>> getMonthRevenue(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Double monthRevenue = bookingService.getMonthRevenue(
+                                providerId, accommodationId);
+
+                ApiResponse<Double> response = new ApiResponse<>(true,
+                                "This month's revenue retrieved successfully",
+                                monthRevenue);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Các endpoint báo cáo doanh thu
+
+        // Doanh thu theo ngày trong khoảng thời gian
+        @GetMapping("/host/{accommodationId}/revenue")
+        public ResponseEntity<ApiResponse<Double>> getRevenueInDateRange(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam LocalDate startDate,
+                        @RequestParam LocalDate endDate) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Double revenue = bookingService.getRevenueInDateRange(
+                                providerId, accommodationId, startDate, endDate);
+
+                ApiResponse<Double> response = new ApiResponse<>(true,
+                                "Revenue in date range retrieved successfully",
+                                revenue);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Doanh thu theo tháng
+        @GetMapping("/host/{accommodationId}/monthly-revenue")
+        public ResponseEntity<ApiResponse<List<Map<String,Double>>>> getMonthlyRevenue(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam int year) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                List<Map<String,Double>> monthlyRevenue = bookingService.getMonthlyRevenue(
+                                providerId, accommodationId, year);
+
+                ApiResponse<List<Map<String,Double>>> response = new ApiResponse<>(true,
+                                "Monthly revenue retrieved successfully",
+                                monthlyRevenue);
+
+                return ResponseEntity.ok(response);
+        }
+
+
+        // Doanh thu theo năm 
+        @GetMapping("/host/{accommodationId}/yearly-revenue")
+        public ResponseEntity<ApiResponse<List<Map<String,Double>>>> getYearlyRevenue(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                List<Map<String,Double>> yearlyRevenue = bookingService.getYearlyRevenue(
+                                providerId, accommodationId);
+
+                ApiResponse<List<Map<String,Double>>> response = new ApiResponse<>(true,
+                                "Yearly revenue retrieved successfully",
+                                yearlyRevenue);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // thống kê statis
+        @GetMapping("/host/{accommodationId}/statistics")
+        public ResponseEntity<ApiResponse<Map<String, Object>>> getBookingStatistics(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam LocalDate startDate,
+                        @RequestParam LocalDate endDate) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                Map<String, Object> statistics = bookingService.getBookingStatistics(
+                                providerId, accommodationId, startDate, endDate);
+
+                ApiResponse<Map<String, Object>> response = new ApiResponse<>(true,
+                                "Booking statistics retrieved successfully",
+                                statistics);
+
+                return ResponseEntity.ok(response);
+        }
+
+        // Doanh thu theo loại phòng
+//          {
+//       "roomTypeId": 1,
+//       "roomTypeName": "Deluxe",
+//       "totalBookings": 40,
+//       "totalRevenue": 80000000.0,
+//       "averagePrice": 2000000.0,
+//       "occupancyRate": 85.0
+//     }
+        @GetMapping("/host/{accommodationId}/revenue-by-room-type")
+        public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRevenueByRoomType(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam LocalDate startDate,
+                        @RequestParam LocalDate endDate) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                List<Map<String, Object>> revenueByRoomType = bookingService.getRevenueByRoomType(
+                                providerId, accommodationId, startDate, endDate);
+
+                ApiResponse<List<Map<String, Object>>> response = new ApiResponse<>(true,
+                                "Revenue by room type retrieved successfully",
+                                revenueByRoomType);
 
                 return ResponseEntity.ok(response);
         }

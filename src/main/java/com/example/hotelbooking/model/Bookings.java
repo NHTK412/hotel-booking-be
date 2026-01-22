@@ -81,8 +81,8 @@ public class Bookings extends Base {
     @JoinColumn(name = "roomId", nullable = false)
     private Rooms room;
 
-    @OneToOne
-    @JoinColumn(name = "reviewId", nullable = true)
+    @OneToOne(mappedBy = "booking")
+    // @JoinColumn(name = "reviewId", nullable = true)
     private Review review = null;
 
     @OneToMany(mappedBy = "booking")

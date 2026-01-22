@@ -17,6 +17,7 @@ import com.example.hotelbooking.model.Accommodations;
 import com.example.hotelbooking.model.RoomTypes;
 import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
+import com.example.hotelbooking.repository.LocationRepository;
 import com.example.hotelbooking.repository.UserRepository;
 import com.github.davidmoten.geo.GeoHash;
 
@@ -26,25 +27,44 @@ public class AccommodationService {
         private final AccommodationRepository accommodationRepository;
         private final UserRepository userRepository;
 
-        public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository) {
+        private final LocationRepository locationRepository;
+
+        public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository,
+                        LocationRepository locationRepository) {
                 this.accommodationRepository = accommodationRepository;
                 this.userRepository = userRepository;
+                this.locationRepository = locationRepository;
         }
 
-        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type) {
+        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
+                        Long locationId, Boolean sortBy) {
                 // return null;
 
                 List<Accommodations> accommodations = null;
 
-                if (type != null) {
-                        accommodations = accommodationRepository
-                                        .findByIsDeletedFalseAndType(pageable, type)
-                                        .getContent();
-                } else {
-                        accommodations = accommodationRepository
-                                        .findByIsDeletedFalse(pageable)
-                                        .getContent();
-                }
+                // if (type != null) {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalseAndType(pageable, type)
+                // .getContent();
+                // } else {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalse(pageable)
+                // .getContent();
+                // }
+
+                accommodations = (sortBy != null && sortBy)
+                                ? accommodationRepository
+                                                .findByIsDeletedFalseAndLocationId(
+                                                                pageable,
+                                                                locationId,
+                                                                type)
+                                                .getContent()
+                                : accommodationRepository
+                                                .findByLocationIdAndTypeSortedByStar(
+
+                                                                locationId,
+                                                                type, pageable)
+                                                .getContent();
 
                 return accommodations.stream().map((accommodation) -> {
 
@@ -155,6 +175,9 @@ public class AccommodationService {
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
 
+                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found")));
+
                 // Tính toán và lưu mã hash vị trí địa lý
                 String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
                                 accommodationRequestDTO.getLongitude(), 12);
@@ -191,7 +214,8 @@ public class AccommodationService {
                 accommodation.setLongitude(accommodationRequestDTO.getLongitude());
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
-
+                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found")));
                 // Tính toán và lưu mã hash vị trí địa lý
                 String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
                                 accommodationRequestDTO.getLongitude(), 12);
@@ -215,8 +239,8 @@ public class AccommodationService {
                                 .latitude(accommodation.getLatitude())
                                 .longitude(accommodation.getLongitude())
                                 .image(accommodation.getImage())
-
-                                .type(accommodation.getType().getDescription());
+                                .type(accommodation.getType().getDescription())
+                                .locationId(accommodation.getLocation().getLocationId());
 
                 Double starRating = 0.0;
 
@@ -364,6 +388,8 @@ public class AccommodationService {
                                 .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                 .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0
                                                 : discountMinPricePerNight)
+                                .lat(accommodation.getLatitude())
+                                .lng(accommodation.getLongitude())
                                 .build();
         }
 

@@ -19,5 +19,6 @@ public class BookingSummaryDTO {
     private Double finalPrice;
 
     private LocalDateTime checkInAt;
+    private LocalDateTime checkOutAt;
 
 }

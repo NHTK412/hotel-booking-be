@@ -21,6 +21,9 @@ public class AccommodationSummaryDTO {
     private Double discountMinPricePerNight; // Giá đã giảm
     private String type;
 
+    private Double lat;
+    private Double lng;
+
 
     // private Double starRating;
     // private Double minPrice;

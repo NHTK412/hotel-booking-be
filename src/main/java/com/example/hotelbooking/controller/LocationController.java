@@ -13,6 +13,7 @@ import org.springframework.web.servlet.function.EntityResponse;
 import com.example.hotelbooking.dto.location.LocationResponseDTO;
 import com.example.hotelbooking.service.LocationService;
 import com.example.hotelbooking.util.ApiResponse;
+import com.github.davidmoten.geo.GeoHash;
 
 @RestController
 @RequestMapping("/locations")
@@ -40,7 +41,8 @@ class LocationController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<LocationResponseDTO>> getCurrentLocation(
-            @RequestParam(required = false) String subAdministrativeArea, @RequestParam(required = false) String administrativeArea) {
+            @RequestParam(required = false) String subAdministrativeArea,
+            @RequestParam(required = false) String administrativeArea) {
 
         LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea);
 
@@ -53,5 +55,31 @@ class LocationController {
 
     }
 
+    @GetMapping("/calculator")
+    public ResponseEntity<ApiResponse<String>> calculateDistanceAndDuration(
+            @RequestParam Double lat,
+            @RequestParam Double lng) {
+
+        String prefix = GeoHash.encodeHash(lat, lng, 12);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Calculate distance and duration successfully", prefix));
+
+    }
+
+    @GetMapping("/{locationId}")
+    public ResponseEntity<ApiResponse<LocationResponseDTO>> getLocationById(
+            @RequestParam Long locationId) {
+
+        LocationResponseDTO location = locationService.getLocationById(locationId);
+
+        final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
+                true,
+                "Get location by id successfully",
+                location);
+
+        return ResponseEntity.ok(response);
+
+    }
     
+
 }

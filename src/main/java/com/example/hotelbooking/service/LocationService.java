@@ -107,4 +107,18 @@ public class LocationService {
         return value.isEmpty() ? null : value;
     }
 
+    public LocationResponseDTO getLocationById(Long locationId) {
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> new NotFoundException("Location not found"));
+
+        return LocationResponseDTO.builder()
+                .locationId(location.getLocationId())
+                .provinceName(location.getProvinceName())
+                .districtName(location.getDistrictName())
+                .latitude(location.getLatitude())
+                .longitude(location.getLongitude())
+                .searchVector(location.getSearchVector())
+                .build();
+    }
+
 }

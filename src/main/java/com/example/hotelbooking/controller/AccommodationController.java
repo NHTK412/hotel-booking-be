@@ -41,12 +41,19 @@ public class AccommodationController {
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(
                         @RequestParam(defaultValue = "0") Integer page,
                         @RequestParam(defaultValue = "10") Integer size,
-                        @RequestParam(required = false) AccommodationTypeEnum type) {
+                        @RequestParam(required = false) AccommodationTypeEnum type,
+                        @RequestParam(required = false) Long locationId,
+                        // Sắp xếp theo số sao
+                        @RequestParam(required = false) Boolean sortBy
+
+        ) {
                 // return new String();
                 // return "Hello World";
+                
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
-                                .getAllAccommodation(org.springframework.data.domain.PageRequest.of(page, size), type);
+                                .getAllAccommodation(org.springframework.data.domain.PageRequest.of(page, size), type,
+                                                locationId, sortBy);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
                                 "Accommodations fetched successfully",
