@@ -22,4 +22,6 @@ public class AccommodationRequestDTO {
     private String image;
     private AccommodationTypeEnum type;
 
+    private Long locationId;
+
 }

@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
@@ -43,6 +44,10 @@ public class Accommodations extends Base {
     @Column(name = "address", nullable = false)
     private String address;
 
+    // district_name: quận/huyện
+    @Column(name = "district", nullable = false)
+    private String district;
+
     @Column(name = "city", nullable = false)
     private String city;
 
@@ -68,4 +73,14 @@ public class Accommodations extends Base {
     @ManyToMany
     @JoinTable(name = "Accommodations_UserFavorites", joinColumns = @JoinColumn(name = "accommodationId"), inverseJoinColumns = @JoinColumn(name = "userId"))
     private List<Users> favoritedByUsers;
+
+    // Thêm cột này để lưu mã hash vị trí địa lý
+    @Column(name = "geohash", length = 12)
+    private String geohash;
+
+
+    @ManyToOne
+    @JoinColumn(name = "locationId", nullable = false)
+    private Location location;
+
 }

@@ -18,9 +18,13 @@ public class RoomTypeDetailDTO {
     private String name;
     private Integer star;
     private Double price;
+    private Double discount;
     private List<String> imagesPreview;
     private String image;
     // private List<AmentiesResponseDTO> amenities;
     private List<AmenityEnum> amenities;
-    private String localtion;
+    private String localtion; // Nghĩa là ở đâu đó
+    private Integer capacity;
+    private Integer bedroom;
+    private String description;
 }

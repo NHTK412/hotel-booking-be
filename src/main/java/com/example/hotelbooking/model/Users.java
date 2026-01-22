@@ -39,7 +39,8 @@ public class Users extends Base {
     private String name;
 
     // @Column(name = "email", nullable = false, unique = true)
-    @Column(name = "email", unique = true)
+    // @Column(name = "email", unique = true)
+    @Column(name = "email")
     private String email;
 
     // @Column(name = "phone", nullable = false)

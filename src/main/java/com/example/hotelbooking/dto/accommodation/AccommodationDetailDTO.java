@@ -29,4 +29,6 @@ public class AccommodationDetailDTO {
 
     private Boolean isFavorite;
 
+    private Long locationId;
+
 }

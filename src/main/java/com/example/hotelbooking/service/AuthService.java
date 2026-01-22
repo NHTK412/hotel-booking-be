@@ -1,10 +1,15 @@
 package com.example.hotelbooking.service;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.boot.security.autoconfigure.SecurityProperties.User;
 import org.springframework.context.support.BeanDefinitionDsl.Role;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +20,10 @@ import com.example.hotelbooking.dto.auth.OauthLoginDTO;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.GenderEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
+import com.example.hotelbooking.exception.customer.AccessDeniedHandlerException;
 import com.example.hotelbooking.exception.customer.ConflictException;
 import com.example.hotelbooking.exception.customer.InvalidCredentialsException;
+import com.example.hotelbooking.exception.customer.InvalidRefreshTokenException;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
@@ -28,6 +35,8 @@ import jakarta.transaction.Transactional;
 @Service
 public class AuthService {
 
+    private final AccessDeniedHandlerException accessDeniedHandlerException;
+
     private final UserRepository userRepository;
 
     private final UserAuthProviderRepository userAuthProviderRepository;
@@ -36,14 +45,23 @@ public class AuthService {
 
     final private SecureRandom secureRandom = new SecureRandom();
 
+    final private RedisTemplate<String, String> redisTemplate;
+
+    final private MailService mailService;
+
     // public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
     // this.userRepository = userRepository;
     public AuthService(
-            UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository, JwtUtil jwtUtil) {
+            UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository, JwtUtil jwtUtil,
+            RedisTemplate<String, String> redisTemplate, MailService mailService,
+            AccessDeniedHandlerException accessDeniedHandlerException) {
 
         this.userRepository = userRepository;
         this.userAuthProviderRepository = userAuthProviderRepository;
         this.jwtUtil = jwtUtil;
+        this.redisTemplate = redisTemplate;
+        this.mailService = mailService;
+        this.accessDeniedHandlerException = accessDeniedHandlerException;
     }
 
     @Transactional
@@ -69,7 +87,12 @@ public class AuthService {
         // if
         // (!authLoginDTO.getPassword().equals(user.getUserAuthProvider().getPassword()))
         // {
-        if (!authLoginDTO.getPassword().equals(userAuthProvider.getPassword())) {
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        // String code = encoder.encode(authLoginDTO.getPassword());
+        // System.out.println(code);
+
+        if (!encoder.matches(authLoginDTO.getPassword(), userAuthProvider.getPassword())) {
 
             // throw new RuntimeException("Invalid credentials");
             throw new InvalidCredentialsException("Invalid email or password");
@@ -77,14 +100,15 @@ public class AuthService {
 
         Users user = userAuthProvider.getUser();
 
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(), user.getRole());
 
         byte[] refreshTokenBytes = new byte[50];
         secureRandom.nextBytes(refreshTokenBytes);
         String refreshToken = new String(Hex.encode(refreshTokenBytes));
 
         return AuthResponseDTO.builder()
-                .email(user.getEmail())
+                // .email(user.getEmail())
+                .email(userAuthProvider.getProviderUserId())
                 .role(user.getRole())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -176,8 +200,16 @@ public class AuthService {
         UserAuthProvider userAuthProvider = new UserAuthProvider();
         userAuthProvider.setType(AuthProviderTypeEnum.LOCAL);
         userAuthProvider.setProviderUserId(registerDTO.getEmail());
-        userAuthProvider.setPassword(registerDTO.getPassword());
+        // userAuthProvider.setPassword(registerDTO.getPassword());
         userAuthProvider.setUser(newUser);
+
+        /// Hash pass
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+        // if (!employee.getPassword().equals(password)) {
+        if (!encoder.matches(registerDTO.getPassword(), userAuthProvider.getPassword())) {
+            throw new InvalidRefreshTokenException("Mật khẩu không hợp lệ");
+        }
 
         userAuthProviderRepository.save(userAuthProvider);
 
@@ -195,6 +227,103 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .expiresIn(jwtUtil.getExpirationMs())
                 .build();
+    }
+
+    @Transactional
+    public Boolean sendOtp(String email) {
+
+        UserAuthProvider userAuthProvider = userAuthProviderRepository
+                .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL, email)
+                .orElseThrow(() -> new InvalidCredentialsException("Email not registered"));
+        // Tạo mã OTP gồm 4 chữ số
+        String otp = String.format("%04d", secureRandom.nextInt(10000));
+
+        // Lưu vào redis
+
+        // redisTemplate.opsForValue().set("refreshToken::" + refreshToken,
+        // employee.getUsername(), 7, TimeUnit.DAYS);
+
+        // redisTemplate.opsForValue().set("OTP_" + email, otp, 5 * 60); // hết hạn sau
+        // 5 phút
+        redisTemplate.opsForValue().set("otp::" + userAuthProvider.getProviderUserId(), otp, 5, TimeUnit.MINUTES); // hết
+                                                                                                                   // hạn
+                                                                                                                   // sau
+                                                                                                                   // 5
+                                                                                                                   // phút
+
+        // Gửi mã OTP đến email người dùng (sử dụng dịch vụ email)
+        System.out.println("Sending OTP " + otp + " to email: " + email);
+
+        mailService.sendEmail(email, "Your OTP Code", "Your OTP code is: " + otp);
+
+        // return otp;
+        return true;
+    }
+
+    // @Transactional
+    // public boolean verifyOtp(String email, String otp) {
+
+    // String cachedOtp = redisTemplate.opsForValue().get("otp::" + email);
+
+    // if (cachedOtp != null && cachedOtp.equals(otp)) {
+    // // Xóa mã OTP khỏi Redis sau khi xác thực thành công
+    // redisTemplate.delete("otp::" + email);
+    // return true;
+    // }
+
+    // return false;
+    // }
+    @Transactional
+    public Map<String, Object> verifyOtp(String email, String otp) {
+
+        String cachedOtp = redisTemplate.opsForValue().get("otp::" + email);
+
+        if (cachedOtp != null && cachedOtp.equals(otp)) {
+            // Xóa mã OTP khỏi Redis sau khi xác thực thành công
+            redisTemplate.delete("otp::" + email);
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("isValid", true);
+
+            // Users user = userRepository.findByEmail(email)
+            // .orElseThrow(() -> new InvalidCredentialsException("Email not registered"));
+            // String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+
+            UserAuthProvider userAuthProvider = userAuthProviderRepository
+                    .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL,
+                            email)
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+
+            String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(),
+                    userAuthProvider.getUser().getRole());
+
+            byte[] refreshTokenBytes = new byte[50];
+            secureRandom.nextBytes(refreshTokenBytes);
+            String refreshToken = new String(Hex.encode(refreshTokenBytes));
+            responseData.put("accessToken", accessToken);
+            responseData.put("refreshToken", refreshToken);
+            responseData.put("expiresIn", jwtUtil.getExpirationMs());
+            return responseData;
+
+        }
+
+        return Map.of("isValid", false);
+    }
+
+    // resetPassword
+    @Transactional
+    public Boolean resetPassword(String email, String newPassword) {
+
+        UserAuthProvider userAuthProvider = userAuthProviderRepository
+                .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL, email)
+                .orElseThrow(() -> new InvalidCredentialsException("Email not registered"));
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String code = encoder.encode(newPassword);
+
+        userAuthProvider.setPassword(code);
+        userAuthProviderRepository.save(userAuthProvider);
+        return true;
     }
 
 }

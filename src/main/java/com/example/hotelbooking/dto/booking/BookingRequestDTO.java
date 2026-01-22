@@ -23,9 +23,9 @@ public class BookingRequestDTO {
     private LocalDate checkOutDate;
 
     // prices
-    private Double originalPrice;
-    private Double discountedPrice;
-    private Double finalPrice;
+    // private Double originalPrice;
+    // private Double discountedPrice;
+    // private Double finalPrice;
 
     // Id room
     private Long roomTypeId;

@@ -13,6 +13,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/users")
@@ -45,6 +48,21 @@ public class UserController {
         UserResponseDTO userResponseDTO = userService.getUserByProviderId(providerId);
 
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "User fetched successfully", userResponseDTO);
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateCurrentUser(
+            @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+            @RequestBody com.example.hotelbooking.dto.user.UserReqquestDTO userReqquestDTO) {
+        String providerId = customerUserDetails.getUsername();
+        // return new String();
+
+        UserResponseDTO userResponseDTO = userService.updateUserByProviderId(providerId, userReqquestDTO);
+
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "User updated successfully", userResponseDTO);
 
         return ResponseEntity.ok(response);
 

@@ -17,7 +17,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "Reviews")
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor 
 @Getter
 @Setter
 public class Review  extends Base {

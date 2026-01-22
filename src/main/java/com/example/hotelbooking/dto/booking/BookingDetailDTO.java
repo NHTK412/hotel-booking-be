@@ -1,6 +1,7 @@
 package com.example.hotelbooking.dto.booking;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -18,8 +19,10 @@ public class BookingDetailDTO {
     private String customerEmail;
 
     // booking dates
-    private LocalDate checkInDate;
-    private LocalDate checkOutDate;
+    // private LocalDate checkInDate;
+    // private LocalDate checkOutDate;
+    private LocalDateTime checkInAt;
+    private LocalDateTime checkOutAt;
 
     // prices
     private Double originalPrice;
@@ -28,5 +31,15 @@ public class BookingDetailDTO {
 
     // booking status
     private String status;
+
+    // Thông tin phòng
+    private String accommodationName;
+    private String roomType;
+    private String roomNumber;
+    private Double lat;
+    private Double lng;
+
+    // Thông tin đánh giá (nếu có)
+    private Long reviewId;
 
 }

@@ -17,7 +17,9 @@ import com.example.hotelbooking.model.Accommodations;
 import com.example.hotelbooking.model.RoomTypes;
 import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
+import com.example.hotelbooking.repository.LocationRepository;
 import com.example.hotelbooking.repository.UserRepository;
+import com.github.davidmoten.geo.GeoHash;
 
 @Service
 public class AccommodationService {
@@ -25,38 +27,68 @@ public class AccommodationService {
         private final AccommodationRepository accommodationRepository;
         private final UserRepository userRepository;
 
-        public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository) {
+        private final LocationRepository locationRepository;
+
+        public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository,
+                        LocationRepository locationRepository) {
                 this.accommodationRepository = accommodationRepository;
                 this.userRepository = userRepository;
+                this.locationRepository = locationRepository;
         }
 
-        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type) {
+        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
+                        Long locationId, Boolean sortBy) {
                 // return null;
 
                 List<Accommodations> accommodations = null;
 
-                if (type != null) {
-                        accommodations = accommodationRepository
-                                        .findByIsDeletedFalseAndType(pageable, type)
-                                        .getContent();
-                } else {
-                        accommodations = accommodationRepository
-                                        .findByIsDeletedFalse(pageable)
-                                        .getContent();
-                }
+                // if (type != null) {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalseAndType(pageable, type)
+                // .getContent();
+                // } else {
+                // accommodations = accommodationRepository
+                // .findByIsDeletedFalse(pageable)
+                // .getContent();
+                // }
+
+                accommodations = (sortBy != null && sortBy)
+                                ? accommodationRepository
+                                                .findByIsDeletedFalseAndLocationId(
+                                                                pageable,
+                                                                locationId,
+                                                                type)
+                                                .getContent()
+                                : accommodationRepository
+                                                .findByLocationIdAndTypeSortedByStar(
+
+                                                                locationId,
+                                                                type, pageable)
+                                                .getContent();
 
                 return accommodations.stream().map((accommodation) -> {
 
                         Double averageRating = 0.0;
                         Double minPricePerNight = Double.MAX_VALUE;
+                        Double discountMinPricePerNight = Double.MAX_VALUE;
+                        Double finalMinPrice = Double.MAX_VALUE;
 
                         for (RoomTypes room : accommodation.getRooms()) {
                                 if (room.getIsDeleted()) {
                                         continue;
                                 }
                                 averageRating += room.getStar();
-                                if (room.getPrice() < minPricePerNight) {
-                                        minPricePerNight = room.getPrice();
+
+                                Double roomPrice = room.getPrice();
+                                Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
+
+                                Double finalPrice = roomPrice - (roomPrice * discount / 100);
+
+                                if (finalPrice < finalMinPrice) {
+                                        minPricePerNight = roomPrice;
+                                        discountMinPricePerNight = discount;
+
+                                        finalMinPrice = finalPrice;
                                 }
                         }
 
@@ -70,6 +102,7 @@ public class AccommodationService {
                                         .type(accommodation.getType().getDescription())
                                         .image(accommodation.getImage())
                                         // .averageRating(accommodation.get)
+                                        .discountMinPricePerNight(discountMinPricePerNight)
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                         .build();
@@ -142,6 +175,16 @@ public class AccommodationService {
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
 
+                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found")));
+
+                // Tính toán và lưu mã hash vị trí địa lý
+                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
+                                accommodationRequestDTO.getLongitude(), 12);
+
+                accommodation.setGeohash(geoHash);
+                // --------------------------------------------
+
                 accommodationRepository.save(accommodation);
 
                 return convertToDetailDTO(accommodation);
@@ -171,6 +214,14 @@ public class AccommodationService {
                 accommodation.setLongitude(accommodationRequestDTO.getLongitude());
                 accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
+                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found")));
+                // Tính toán và lưu mã hash vị trí địa lý
+                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
+                                accommodationRequestDTO.getLongitude(), 12);
+
+                accommodation.setGeohash(geoHash);
+                // --------------------------------------------
 
                 accommodationRepository.save(accommodation);
 
@@ -188,8 +239,8 @@ public class AccommodationService {
                                 .latitude(accommodation.getLatitude())
                                 .longitude(accommodation.getLongitude())
                                 .image(accommodation.getImage())
-
-                                .type(accommodation.getType().getDescription());
+                                .type(accommodation.getType().getDescription())
+                                .locationId(accommodation.getLocation().getLocationId());
 
                 Double starRating = 0.0;
 
@@ -220,6 +271,8 @@ public class AccommodationService {
                                                 .star(room.getStar())
                                                 .price(room.getPrice())
                                                 .image(room.getImage())
+                                                .discount(room.getDiscount())
+                                                .address(accommodation.getAddress())
                                                 .build());
 
                                 totalStars += room.getStar();
@@ -263,4 +316,90 @@ public class AccommodationService {
 
                 return convertToDetailDTO(accommodation);
         }
+
+        public List<AccommodationSummaryDTO> findNearbyAccommodations(double latitude, double longitude,
+                        Integer precision, String type) {
+
+                String prefix = GeoHash.encodeHash(latitude, longitude, precision);
+                List<Accommodations> nearbyAccommodations;
+
+                if (type != null && !type.isEmpty()) {
+                        nearbyAccommodations = accommodationRepository.findNearbyWithType(prefix, type);
+                } else {
+                        nearbyAccommodations = accommodationRepository.findNearby(prefix);
+                }
+
+                return nearbyAccommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
+        private AccommodationSummaryDTO convertToSummaryDTO(Accommodations accommodation) {
+
+                Double averageRating = 0.0;
+                Double minPricePerNight = Double.MAX_VALUE;
+                Double discountMinPricePerNight = Double.MAX_VALUE;
+                Double finalMinPrice = Double.MAX_VALUE;
+
+                for (RoomTypes room : accommodation.getRooms()) {
+                        if (room.getIsDeleted()) {
+                                continue;
+                        }
+                        averageRating += room.getStar();
+
+                        Double roomPrice = room.getPrice();
+                        Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
+
+                        Double finalPrice = roomPrice - (roomPrice * discount / 100);
+
+                        if (finalPrice < finalMinPrice) {
+                                minPricePerNight = roomPrice;
+                                discountMinPricePerNight = discount;
+
+                                finalMinPrice = finalPrice;
+                        }
+                }
+
+                averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                                : averageRating / accommodation.getRooms().size();
+                // Double averageRating = 0.0;
+                // Double minPricePerNight = Double.MAX_VALUE;
+
+                // for (RoomTypes room : accommodation.getRooms()) {
+                // if (room.getIsDeleted()) {
+                // continue;
+                // }
+                // averageRating += room.getStar();
+                // if (room.getPrice() < minPricePerNight) {
+                // minPricePerNight = room.getPrice();
+                // }
+                // }
+
+                // averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                // : averageRating / accommodation.getRooms().size();
+
+                return AccommodationSummaryDTO.builder()
+                                .accommodationId(accommodation.getAccommodationId())
+                                .accommodationName(accommodation.getAccommodationName())
+                                .address(accommodation.getAddress())
+                                .type(accommodation.getType().getDescription())
+                                .image(accommodation.getImage())
+                                .averageRating(averageRating)
+                                .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
+                                .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0
+                                                : discountMinPricePerNight)
+                                .lat(accommodation.getLatitude())
+                                .lng(accommodation.getLongitude())
+                                .build();
+        }
+
+        public List<AccommodationSummaryDTO> searchAccommodations(String keyword, Pageable pageable) {
+                List<Accommodations> accommodations = accommodationRepository
+                                .searchByKeyword(keyword, pageable).toList();
+
+                return accommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
 }
