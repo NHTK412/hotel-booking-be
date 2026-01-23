@@ -3,6 +3,7 @@ package com.example.hotelbooking.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.catalina.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -15,25 +16,30 @@ import com.example.hotelbooking.exception.customer.NotFoundException;
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.model.Accommodations;
 import com.example.hotelbooking.model.RoomTypes;
+import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
 import com.example.hotelbooking.repository.LocationRepository;
+import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 import com.github.davidmoten.geo.GeoHash;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class AccommodationService {
 
         private final AccommodationRepository accommodationRepository;
         private final UserRepository userRepository;
-
+        private final UserAuthProviderRepository userAuthProviderRepository;
         private final LocationRepository locationRepository;
 
         public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository,
-                        LocationRepository locationRepository) {
+                        LocationRepository locationRepository, UserAuthProviderRepository userAuthProviderRepository) {
                 this.accommodationRepository = accommodationRepository;
                 this.userRepository = userRepository;
                 this.locationRepository = locationRepository;
+                this.userAuthProviderRepository = userAuthProviderRepository;
         }
 
         public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
@@ -109,8 +115,14 @@ public class AccommodationService {
                 }).toList();
         }
 
-        public List<AccommodationSummaryDTO> getAllByFavorite(Pageable pageable, Long userId) {
+        public List<AccommodationSummaryDTO> getAllByFavorite(Pageable pageable, String providerId) {
                 // return null;
+
+                UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+
+                Users user = authProvider.getUser();
+                Long userId = user.getId();
 
                 List<Accommodations> accommodations = accommodationRepository
                                 .findByIsDeletedFalseAndFavoritedByUsers_id(pageable, userId).toList();
@@ -156,11 +168,19 @@ public class AccommodationService {
                 }).toList();
         }
 
-        public AccommodationDetailDTO getAccommodationById(Long accommodationId) {
+        public AccommodationDetailDTO getAccommodationById(String providerId, Long accommodationId) {
+
+                UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+
+                Users user = authProvider.getUser();
+
                 Accommodations accommodation = accommodationRepository.findById(accommodationId)
                                 .orElseThrow(() -> new RuntimeException("Accommodation not found"));
 
-                return convertToDetailDTO(accommodation);
+                return (user != null)
+                                ? convertToDetailDTO(accommodation, user)
+                                : convertToDetailDTO(accommodation);
         }
 
         public AccommodationDetailDTO createAccommodation(AccommodationRequestDTO accommodationRequestDTO) {
@@ -225,10 +245,22 @@ public class AccommodationService {
 
                 accommodationRepository.save(accommodation);
 
-                return convertToDetailDTO(accommodation);
+                return convertToDetailDTO(accommodation, null);
         }
 
         private AccommodationDetailDTO convertToDetailDTO(Accommodations accommodation) {
+                return convertToDetailDTO(accommodation, null);
+        }
+
+        private AccommodationDetailDTO convertToDetailDTO(Accommodations accommodation, Users user) {
+
+                Boolean isFavorite = false;
+
+                if (user != null) {
+                        List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
+                        isFavorite = favoritedByUsers.contains(user) ? true : false;
+                }
+
                 AccommodationDetailDTOBuilder builder = AccommodationDetailDTO
                                 .builder()
                                 .accommodationId(accommodation.getAccommodationId())
@@ -240,6 +272,7 @@ public class AccommodationService {
                                 .longitude(accommodation.getLongitude())
                                 .image(accommodation.getImage())
                                 .type(accommodation.getType().getDescription())
+                                .isFavorite(isFavorite)
                                 .locationId(accommodation.getLocation().getLocationId());
 
                 Double starRating = 0.0;
@@ -280,11 +313,12 @@ public class AccommodationService {
                         starRating = totalStars / rooms.size();
                 }
 
-                List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
+                // List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
 
-                Users user = userRepository.findById(Long.valueOf(4)).orElse(null);
+                // Users user = userRepository.findById(Long.valueOf(4)).orElse(null);
 
-                boolean isFavorite = (user != null && favoritedByUsers.contains(user)) ? true : false;
+                // boolean isFavorite = (user != null && favoritedByUsers.contains(user)) ? true
+                // : false;
 
                 builder
                                 .roomTypes(roomTypeSummaries)
@@ -294,14 +328,23 @@ public class AccommodationService {
                 return builder.build();
         }
 
-        public AccommodationDetailDTO updateFavoriteAccommodation(Long accommodationId, Boolean isFavorite) {
+        @Transactional
+        public AccommodationDetailDTO updateFavoriteAccommodation(String providerId, Long accommodationId,
+                        Boolean isFavorite) {
                 Accommodations accommodation = accommodationRepository.findById(accommodationId)
                                 .orElseThrow(() -> new NotFoundException("Accommodation not found"));
 
-                Users user = userRepository.findById(Long.valueOf(4))
-                                .orElseThrow(() -> new NotFoundException("User not found"));
+                // Users user = userRepository.findById(Long.valueOf(4))
+                // .orElseThrow(() -> new NotFoundException("User not found"));
+
+                UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+
+                Users user = authProvider.getUser();
 
                 List<Users> favoritedByUsers = accommodation.getFavoritedByUsers();
+
+                // boolean isCurrentlyFavorite = favoritedByUsers.contains(user);
 
                 if (isFavorite) {
                         if (!favoritedByUsers.contains(user)) {
@@ -314,7 +357,7 @@ public class AccommodationService {
                 accommodation.setFavoritedByUsers(favoritedByUsers);
                 accommodationRepository.save(accommodation);
 
-                return convertToDetailDTO(accommodation);
+                return convertToDetailDTO(accommodation, user);
         }
 
         public List<AccommodationSummaryDTO> findNearbyAccommodations(double latitude, double longitude,

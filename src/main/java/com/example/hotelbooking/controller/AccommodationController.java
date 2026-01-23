@@ -49,7 +49,6 @@ public class AccommodationController {
         ) {
                 // return new String();
                 // return "Hello World";
-                
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
                                 .getAllAccommodation(org.springframework.data.domain.PageRequest.of(page, size), type,
@@ -65,10 +64,14 @@ public class AccommodationController {
         @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
         @GetMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> getAccommodationById(
+                        @AuthenticationPrincipal CustomerUserDetails userDetails,
                         @PathVariable Long accommodationId) {
 
+
+                                final String providerId = userDetails.getUsername();
+
                 AccommodationDetailDTO accommodationDetailDTO = accommodationService
-                                .getAccommodationById(accommodationId);
+                                .getAccommodationById(providerId, accommodationId);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
                                 "Accommodation fetched successfully",
@@ -126,14 +129,17 @@ public class AccommodationController {
         @PreAuthorize("hasAnyRole('USER')")
         @GetMapping("/favorite")
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllByFavorite(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
                         @RequestParam(defaultValue = "0") Integer page,
                         @RequestParam(defaultValue = "10") Integer size) {
                 // return new String();
                 // return "Hello World";
 
+                String providerId = customerUserDetails.getUsername();
+
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
                                 .getAllByFavorite(org.springframework.data.domain.PageRequest.of(page, size),
-                                                Long.valueOf(4));
+                                                providerId);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
                                 "Accommodations fetched successfully",
@@ -145,11 +151,14 @@ public class AccommodationController {
         @PreAuthorize("hasAnyRole('USER')")
         @PutMapping("/favorite/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> updateFavoriteAccommodation(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
                         @PathVariable Long accommodationId,
                         @RequestParam(required = true, defaultValue = "false") Boolean isFavorite) {
 
+                final String providerId = customerUserDetails.getUsername();
+
                 AccommodationDetailDTO updatedAccommodation = accommodationService
-                                .updateFavoriteAccommodation(accommodationId, isFavorite);
+                                .updateFavoriteAccommodation(providerId, accommodationId, isFavorite);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
                                 "Accommodation updated successfully",
