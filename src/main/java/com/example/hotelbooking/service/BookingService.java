@@ -13,6 +13,7 @@ import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties.Apiversion
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.booking.BookingDetailDTO;
@@ -118,6 +119,9 @@ public class BookingService {
                 // set status
                 booking.setStatus(BookingStatusEnum.WAITING_FOR_PAYMENT);
 
+                // Set expiredAt (thời gian hủy)
+                booking.setExpiredAt(LocalDateTime.now().plusMinutes(3));
+
                 bookingRepository.save(booking);
 
                 // update room status to DELETED (not available)
@@ -132,7 +136,6 @@ public class BookingService {
         @Transactional
         public BookingDetailDTO getBookingById(String providerId, Long bookingId) {
 
-
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
@@ -141,10 +144,7 @@ public class BookingService {
                 final Bookings booking = bookingRepository.findById(bookingId)
                                 .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-
                 // System.err.println("Review: " + booking.getReview().getReviewId());
-
-                
 
                 if (userRole == UserRoleEnum.ROLE_HOST) {
                         Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
@@ -655,6 +655,20 @@ public class BookingService {
 
                 return trends;
 
+        }
+
+        @Scheduled(fixedDelay = 60000)
+        public void expirePendingBookings() {
+                List<Bookings> expiredBookings = bookingRepository
+                                .findByStatusAndExpiredAtBefore(BookingStatusEnum.WAITING_FOR_PAYMENT,
+                                                LocalDateTime.now());
+
+                for (Bookings booking : expiredBookings) {
+                        booking.setStatus(BookingStatusEnum.CANCELED);
+                        // bookingRepository.save(booking);
+                }
+
+                bookingRepository.saveAll(expiredBookings);
         }
 
 }

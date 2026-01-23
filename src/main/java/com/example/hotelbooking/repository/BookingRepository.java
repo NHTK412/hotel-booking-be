@@ -122,4 +122,6 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
                         @Param("startDateTime") LocalDateTime startDateTime,
                         @Param("endDateTime") LocalDateTime endDateTime);
 
+        List<Bookings> findByStatusAndExpiredAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
 }

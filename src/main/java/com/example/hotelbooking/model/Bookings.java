@@ -88,4 +88,9 @@ public class Bookings extends Base {
     @OneToMany(mappedBy = "booking")
     private List<Payment> payments = new ArrayList<>();
 
+
+    // Thời gian hủy
+    @Column(name = "expiredAt")
+    private LocalDateTime expiredAt;
+
 }
