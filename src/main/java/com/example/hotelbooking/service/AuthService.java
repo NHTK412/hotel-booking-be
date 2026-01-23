@@ -207,9 +207,12 @@ public class AuthService {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
         // if (!employee.getPassword().equals(password)) {
-        if (!encoder.matches(registerDTO.getPassword(), userAuthProvider.getPassword())) {
-            throw new InvalidRefreshTokenException("Mật khẩu không hợp lệ");
-        }
+        // if (!encoder.matches(registerDTO.getPassword(), userAuthProvider.getPassword())) {
+        //     throw new InvalidRefreshTokenException("Mật khẩu không hợp lệ");
+        // }
+
+        userAuthProvider.setPassword(encoder.encode(registerDTO.getPassword()));
+        
 
         userAuthProviderRepository.save(userAuthProvider);
 
