@@ -89,8 +89,8 @@ public class AuthService {
         // {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        // String code = encoder.encode(authLoginDTO.getPassword());
-        // System.out.println(code);
+        String code = encoder.encode(authLoginDTO.getPassword());
+        System.out.println( "Code" + code);
 
         if (!encoder.matches(authLoginDTO.getPassword(), userAuthProvider.getPassword())) {
 

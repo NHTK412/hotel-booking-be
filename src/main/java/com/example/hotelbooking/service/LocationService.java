@@ -43,7 +43,8 @@ public class LocationService {
 
     }
 
-    public LocationResponseDTO getCurrentLocation(String subAdministrativeArea, String administrativeArea) {
+    public LocationResponseDTO getCurrentLocation(String subAdministrativeArea, String administrativeArea,
+            Double latitude, Double longitude) {
         // return locationRepository.findCurrentLocation(subAdministrativeArea,
         // administrativeArea);
 
@@ -65,29 +66,49 @@ public class LocationService {
         // WHERE l.district_name LIKE "%Tân Bình%" AND l.province_name LIKE "%Hồ Chí
         // Minh%";
 
-        String sub = normalize(subAdministrativeArea);
-        String ad = normalize(administrativeArea);
+        // ------------------------------------------------------------------------------------
 
-        List<Location> locations = new ArrayList<>();
+        // String sub = normalize(subAdministrativeArea);
+        // String ad = normalize(administrativeArea);
 
-        // Case 1
-        locations = locationRepository.findByDistrictNameContainingIgnoreCase(sub);
+        // List<Location> locations = new ArrayList<>();
 
-        if (locations.isEmpty()) {
-            // Case 2
-            locations = locationRepository.findByProvinceNameContainingIgnoreCase(ad);
-        } else if (locations.size() > 1) {
-            // Case 3
-            locations = locationRepository.findCurrentLocation(sub, ad);
+        // // Case 1
+        // locations = locationRepository.findByDistrictNameContainingIgnoreCase(sub);
 
-        }
+        // if (locations.isEmpty()) {
+        // // Case 2
+        // locations = locationRepository.findByProvinceNameContainingIgnoreCase(ad);
+        // } else if (locations.size() > 1) {
+        // // Case 3
+        // locations = locationRepository.findCurrentLocation(sub, ad);
 
-        if (locations.isEmpty()) {
-            throw new NotFoundException("Location not found");
-        }
+        // }
 
-        return locations.stream().findFirst().map(
-                (l) -> LocationResponseDTO
+        // if (locations.isEmpty()) {
+        // throw new NotFoundException("Location not found");
+        // }
+
+        // return locations.stream().findFirst().map(
+        // (l) -> LocationResponseDTO
+        // .builder()
+        // .locationId(l.getLocationId())
+        // .provinceName(l.getProvinceName())
+        // .districtName(l.getDistrictName())
+        // .latitude(l.getLatitude())
+        // .longitude(l.getLongitude())
+        // .searchVector(l.getSearchVector())
+        // .build())
+        // .orElse(null);
+
+        // ------------------------------------------------------------------------------------
+
+        if (latitude != null && longitude != null) {
+            String geoHash = com.github.davidmoten.geo.GeoHash.encodeHash(latitude, longitude, 5);
+            List<Location> locations = locationRepository.findNearby(geoHash);
+            if (!locations.isEmpty()) {
+                Location l = locations.get(0);
+                return LocationResponseDTO
                         .builder()
                         .locationId(l.getLocationId())
                         .provinceName(l.getProvinceName())
@@ -95,8 +116,44 @@ public class LocationService {
                         .latitude(l.getLatitude())
                         .longitude(l.getLongitude())
                         .searchVector(l.getSearchVector())
-                        .build())
-                .orElse(null);
+                        .build();
+            }
+            throw new NotFoundException("Location not found");
+        }
+        else {
+            String sub = normalize(subAdministrativeArea);
+            String ad = normalize(administrativeArea);
+
+            List<Location> locations = new ArrayList<>();
+
+            // Case 1
+            locations = locationRepository.findByDistrictNameContainingIgnoreCase(sub);
+
+            if (locations.isEmpty()) {
+                // Case 2
+                locations = locationRepository.findByProvinceNameContainingIgnoreCase(ad);
+            } else if (locations.size() > 1) {
+                // Case 3
+                locations = locationRepository.findCurrentLocation(sub, ad);
+
+            }
+
+            if (locations.isEmpty()) {
+                throw new NotFoundException("Location not found");
+            }
+
+            return locations.stream().findFirst().map(
+                    (l) -> LocationResponseDTO
+                            .builder()
+                            .locationId(l.getLocationId())
+                            .provinceName(l.getProvinceName())
+                            .districtName(l.getDistrictName())
+                            .latitude(l.getLatitude())
+                            .longitude(l.getLongitude())
+                            .searchVector(l.getSearchVector())
+                            .build())
+                    .orElse(null);
+        }
 
     }
 

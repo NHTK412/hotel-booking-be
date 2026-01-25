@@ -41,6 +41,9 @@ public class Location extends Base {
     @Column(name = "longitude", columnDefinition = "DOUBLE PRECISION")
     private Double longitude; // Tọa độ trung tâm của Quận
 
+    @Column(name = "geoHash", length = 12)
+    private String geoHash; // Mã GeoHash của tọa độ trung tâm
+
 
     @OneToMany(mappedBy = "location")
     private java.util.List<Accommodations> accommodations;
