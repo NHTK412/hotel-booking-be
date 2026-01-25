@@ -15,4 +15,7 @@ public class AuthResponseDTO {
     private String accessToken;
     private String refreshToken;
     private Long expiresIn;
+
+
+    private Long userId; // Dùng để lưu thiết bị 
 }

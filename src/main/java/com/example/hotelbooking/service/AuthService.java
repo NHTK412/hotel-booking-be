@@ -113,6 +113,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtUtil.getExpirationMs())
+                .userId(user.getId())
                 .build();
     }
 
@@ -175,6 +176,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtUtil.getExpirationMs())
+                .userId(user.getId())
                 .build();
     }
 
@@ -207,12 +209,12 @@ public class AuthService {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
         // if (!employee.getPassword().equals(password)) {
-        // if (!encoder.matches(registerDTO.getPassword(), userAuthProvider.getPassword())) {
-        //     throw new InvalidRefreshTokenException("Mật khẩu không hợp lệ");
+        // if (!encoder.matches(registerDTO.getPassword(),
+        // userAuthProvider.getPassword())) {
+        // throw new InvalidRefreshTokenException("Mật khẩu không hợp lệ");
         // }
 
         userAuthProvider.setPassword(encoder.encode(registerDTO.getPassword()));
-        
 
         userAuthProviderRepository.save(userAuthProvider);
 
@@ -229,6 +231,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(jwtUtil.getExpirationMs())
+                .userId(newUser.getId())
                 .build();
     }
 
@@ -303,6 +306,7 @@ public class AuthService {
             byte[] refreshTokenBytes = new byte[50];
             secureRandom.nextBytes(refreshTokenBytes);
             String refreshToken = new String(Hex.encode(refreshTokenBytes));
+            responseData.put("userId", userAuthProvider.getUser().getId());
             responseData.put("accessToken", accessToken);
             responseData.put("refreshToken", refreshToken);
             responseData.put("expiresIn", jwtUtil.getExpirationMs());

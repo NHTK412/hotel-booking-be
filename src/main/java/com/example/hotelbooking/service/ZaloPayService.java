@@ -53,6 +53,9 @@ public class ZaloPayService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private MailService mailService;
+
     /**
      * Tạo mã giao dịch duy nhất (app_trans_id)
      * Format: YYMMDD_XXXXXX (Ví dụ: 251202_123456)
@@ -210,6 +213,32 @@ public class ZaloPayService {
         ObjectMapper mapper = new ObjectMapper();
 
         ZaloPayResponseDTO zaloPayResponse = mapper.readValue(resultJsonStr.toString(), ZaloPayResponseDTO.class);
+
+        // Tiến hàn gửi email thông báo tạo đơn hàng thành công
+        String emailBody = "Xin cảm ơn bạn đã đặt phòng tại khách sạn của chúng tôi.\n"
+                + "Đơn hàng của bạn đã được tạo thành công và đang đã thanh toán qua ZaloPay.\n\n"
+                + "Chi tiết đơn hàng:\n"
+                + "Mã giao dịch: " + appTransId + "\n"
+                + "Số tiền: " + b.getFinalPrice() + " VNĐ\n"
+                + "Mô tả: " + req.getDescription() + "\n\n"
+                + "Khách sạn: " + b.getRoom().getRoomType().getAccommodation().getAccommodationName() + "\n"
+                + "Địa chỉ: " + b.getRoom().getRoomType().getAccommodation().getAddress() + "\n"
+                + "Loại phòng: " + b.getRoom().getRoomType().getName() + "\n"
+                + "Phòng: " + b.getRoom().getName() + "\n"
+                + "Bạn có thể xem chi tiết đơn hàng trên app.\n"
+                + "Trân trọng,\n"
+                + "Khách sạn của chúng tôi.";
+
+        final String email = b.getUser().getEmail();
+
+        if (email != null && !email.isEmpty()) {
+            try {
+                mailService.sendEmail(email, "Thông báo đơn hàng ZaloPay", emailBody);
+            } catch (Exception e) {
+                // TODO: handle exception
+                e.printStackTrace();
+            }
+        }
 
         return zaloPayResponse;
 
