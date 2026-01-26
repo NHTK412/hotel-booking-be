@@ -65,9 +65,9 @@ public class RoomTypeService {
         LocalDateTime checkOutAt = checkOutDate != null ? checkOutDate.atTime(12, 0, 0) : null;
 
         List<RoomTypes> roomTypes = roomTypeRepository.findAvailableRoomTypes(
-                    // normalizeFilter(district),
-                    // normalizeFilter(city),
-                    locationId,
+                // normalizeFilter(district),
+                // normalizeFilter(city),
+                locationId,
                 normalizePositiveInteger(capacity),
                 normalizePositiveInteger(bedroom),
                 checkInAt,
@@ -80,7 +80,8 @@ public class RoomTypeService {
                 .star(roomType.getStar())
                 .price(roomType.getPrice())
                 .image(roomType.getImage())
-                .address(roomType.getAccommodation().getAddress()) // Thêm địa chỉ vào DTO
+                // .address(roomType.getAccommodation().getAddress()) // Thêm địa chỉ vào DTO
+                .address(roomType.getAccommodation().getAccommodationName()) // Thêm địa chỉ vào DTO
                 .discount(roomType.getDiscount())
                 .build()).toList();
     }

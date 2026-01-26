@@ -95,4 +95,7 @@ public class RoomTypes extends Base {
     @OneToMany(mappedBy = "roomType", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
     private List<Rooms> rooms = new ArrayList<>();
 
+    @OneToMany(mappedBy = "roomType", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
+    private List<Review> reviews = new ArrayList<>();
+
 }

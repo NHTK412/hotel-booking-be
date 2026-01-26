@@ -15,6 +15,7 @@ import com.example.hotelbooking.exception.customer.ConflictException;
 import com.example.hotelbooking.exception.customer.NotFoundException;
 import com.example.hotelbooking.model.Bookings;
 import com.example.hotelbooking.model.Review;
+import com.example.hotelbooking.model.RoomTypes;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.repository.BookingRepository;
 import com.example.hotelbooking.repository.ReviewRepository;
@@ -74,6 +75,21 @@ public class ReviewService {
         newReview.setRoomType(booking.getRoom().getRoomType());
 
         Review savedReview = reviewRepository.save(newReview);
+
+        booking.setReview(savedReview);
+
+        bookingRepository.save(booking);
+
+        RoomTypes roomType = booking.getRoom().getRoomType();
+
+        int currentAvgRating = roomType.getStar();
+
+        Integer currentReviewCount = roomType.getReviews().size();
+
+        double newAvgRating = (currentAvgRating * (currentReviewCount - 1) + savedReview.getRating())
+                / currentReviewCount;
+                
+        roomType.setStar((int) Math.round(newAvgRating));
 
         return mapToReviewSummaryDTO(savedReview);
 

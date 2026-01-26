@@ -215,31 +215,37 @@ public class ZaloPayService {
         ZaloPayResponseDTO zaloPayResponse = mapper.readValue(resultJsonStr.toString(), ZaloPayResponseDTO.class);
 
         // Tiến hàn gửi email thông báo tạo đơn hàng thành công
-        String emailBody = "Xin cảm ơn bạn đã đặt phòng tại khách sạn của chúng tôi.\n"
-                + "Đơn hàng của bạn đã được tạo thành công và đang đã thanh toán qua ZaloPay.\n\n"
-                + "Chi tiết đơn hàng:\n"
-                + "Mã giao dịch: " + appTransId + "\n"
-                + "Số tiền: " + b.getFinalPrice() + " VNĐ\n"
-                + "Mô tả: " + req.getDescription() + "\n\n"
-                + "Khách sạn: " + b.getRoom().getRoomType().getAccommodation().getAccommodationName() + "\n"
-                + "Địa chỉ: " + b.getRoom().getRoomType().getAccommodation().getAddress() + "\n"
-                + "Loại phòng: " + b.getRoom().getRoomType().getName() + "\n"
-                + "Phòng: " + b.getRoom().getName() + "\n"
-                + "Bạn có thể xem chi tiết đơn hàng trên app.\n"
-                + "Trân trọng,\n"
-                + "Khách sạn của chúng tôi.";
+        // String emailBody = "Xin cảm ơn bạn đã đặt phòng tại khách sạn của chúng
+        // tôi.\n"
+        // + "Đơn hàng của bạn đã được tạo thành công và đang đã thanh toán qua
+        // ZaloPay.\n\n"
+        // + "Chi tiết đơn hàng:\n"
+        // + "Mã giao dịch: " + appTransId + "\n"
+        // + "Số tiền: " + b.getFinalPrice() + " VNĐ\n"
+        // + "Mô tả: " + req.getDescription() + "\n\n"
+        // + "Khách sạn: " +
+        // b.getRoom().getRoomType().getAccommodation().getAccommodationName() + "\n"
+        // + "Địa chỉ: " + b.getRoom().getRoomType().getAccommodation().getAddress() +
+        // "\n"
+        // + "Loại phòng: " + b.getRoom().getRoomType().getName() + "\n"
+        // + "Phòng: " + b.getRoom().getName() + "\n"
+        // + "Bạn có thể xem chi tiết đơn hàng trên app.\n"
+        // + "Trân trọng,\n"
+        // + "Khách sạn của chúng tôi.";
 
-        // final String email = b.getUser().getEmail();
-        final String email = b.getCustomerEmail();
+        // // final String email = b.getUser().getEmail();
+        // final String email = b.getCustomerEmail();
 
-        if (email != null && !email.isEmpty()) {
-            try {
-                mailService.sendEmail(email, "Thông báo đơn hàng ZaloPay", emailBody);
-            } catch (Exception e) {
-                // TODO: handle exception
-                e.printStackTrace();
-            }
-        }
+        // if (email != null && !email.isEmpty()) {
+        // try {
+        // mailService.sendEmail(email, "Thông báo đơn hàng ZaloPay", emailBody);
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // e.printStackTrace();
+        // }
+        // }
+
+        System.err.println("ZaloPay Response: " + zaloPayResponse.getOrderUrl());
 
         return zaloPayResponse;
 
@@ -439,6 +445,36 @@ public class ZaloPayService {
             // Nếu trả về -1 -> ZaloPay sẽ retry callback nhiều lần
             result.put("return_code", 1);
             result.put("return_message", "success");
+
+            Bookings b = bookingRepository.findById((bookingId))
+                    .orElseThrow(() -> new NotFoundException("Order not found"));
+
+            // Tiến hàn gửi email thông báo tạo đơn hàng thành công
+            String emailBody = "Xin cảm ơn bạn đã đặt phòng tại khách sạn của chúng tôi.\n"
+                    + "Đơn hàng của bạn đã được tạo thành công và đã thanh toán qua ZaloPay.\n\n"
+                    + "Chi tiết đơn hàng:\n"
+                    + "Mã giao dịch: " + appTransId + "\n"
+                    + "Số tiền: " + b.getFinalPrice() + " VNĐ\n"
+                    + "Mô tả: " + "Thanh toán hóa đơn " + "\n\n"
+                    + "Khách sạn: " + b.getRoom().getRoomType().getAccommodation().getAccommodationName() + "\n"
+                    + "Địa chỉ: " + b.getRoom().getRoomType().getAccommodation().getAddress() + "\n"
+                    + "Loại phòng: " + b.getRoom().getRoomType().getName() + "\n"
+                    + "Phòng: " + b.getRoom().getName() + "\n"
+                    + "Bạn có thể xem chi tiết đơn hàng trên app.\n"
+                    + "Trân trọng,\n"
+                    + "Khách sạn của chúng tôi.";
+
+            // final String email = b.getUser().getEmail();
+            final String email = b.getCustomerEmail();
+
+            if (email != null && !email.isEmpty()) {
+                try {
+                    mailService.sendEmail(email, "Thông báo đơn hàng ZaloPay", emailBody);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                    e.printStackTrace();
+                }
+            }
 
         } catch (Exception e) {
             // Có lỗi xảy ra -> trả về -1 để ZaloPay retry
