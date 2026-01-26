@@ -13,4 +13,6 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
     // Define repository methods here
 
     Optional<Device> findByDeviceType(String deviceType);
+
+
 }

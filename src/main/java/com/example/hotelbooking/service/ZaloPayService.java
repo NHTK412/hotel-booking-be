@@ -229,7 +229,8 @@ public class ZaloPayService {
                 + "Trân trọng,\n"
                 + "Khách sạn của chúng tôi.";
 
-        final String email = b.getUser().getEmail();
+        // final String email = b.getUser().getEmail();
+        final String email = b.getCustomerEmail();
 
         if (email != null && !email.isEmpty()) {
             try {

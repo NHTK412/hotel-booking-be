@@ -51,6 +51,7 @@ public interface RoomRespository extends JpaRepository<Rooms, Long> {
                             AND b.checkOutAt > :checkInAt
                     )
             """)
+            // Chỉ lấy những phòng mà không có booking nào trùng với khoảng thời gian yêu cầu và trạng thái booking không phải là CANCELLED
     List<Rooms> findRoomAvailableByRoomTypeId(
             Long roomTypeId,
             LocalDateTime checkInAt,

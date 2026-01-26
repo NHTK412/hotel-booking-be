@@ -1,5 +1,7 @@
 package com.example.hotelbooking.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.device.DeviceRegistrationRequest;
@@ -25,6 +27,37 @@ public class DeviceService {
 
     @Transactional
     public Boolean registerDevice(String providerId, DeviceRegistrationRequest deviceRegistrationRequest) {
+
+        // Optional<Device> existingDevice = deviceRepository.findByDeviceType(deviceRegistrationRequest.getDeviceType());
+
+        // if (existingDevice.isPresent()) { // trả về true nếu đã có thiết bị rồi, chỉ
+        // cần cập nhật token
+
+        // Device device = existingDevice.get();
+        // device.setFcmToken(deviceRegistrationRequest.getFcmToken());
+        // deviceRepository.save(device);
+
+        // return true;
+        // } else {
+        // UserAuthProvider userAuthProvider =
+        // userAuthProviderRepository.findByProviderUserId(providerId)
+        // .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+
+        // Users user = userAuthProvider.getUser();
+
+        // Device device = new Device();
+        // device.setFcmToken(deviceRegistrationRequest.getFcmToken());
+        // device.setDeviceType(deviceRegistrationRequest.getDeviceType());
+        // device.setPlatform(deviceRegistrationRequest.getPlatform());
+        // device.setUser(user);
+
+        // // Users user =
+        // userRepository.findById(deviceRegistrationRequest.getUserId())
+        // // .orElseThrow(() -> new NotFoundException("User not found"));
+
+        // deviceRepository.save(device);
+        // return true;
+        // }
 
         UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                 .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
