@@ -42,9 +42,11 @@ class LocationController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<LocationResponseDTO>> getCurrentLocation(
             @RequestParam(required = false) String subAdministrativeArea,
-            @RequestParam(required = false) String administrativeArea) {
+            @RequestParam(required = false) String administrativeArea,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude) {
 
-        LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea);
+        LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea, latitude, longitude);
 
         final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
                 true,
@@ -54,6 +56,8 @@ class LocationController {
         return ResponseEntity.ok(response);
 
     }
+
+    //  Không cần login
 
     @GetMapping("/calculator")
     public ResponseEntity<ApiResponse<String>> calculateDistanceAndDuration(

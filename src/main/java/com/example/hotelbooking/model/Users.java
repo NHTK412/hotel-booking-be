@@ -79,4 +79,7 @@ public class Users extends Base {
     @OneToOne(mappedBy = "user")
     private UserAuthProvider userAuthProvider;
 
+    @OneToMany(mappedBy = "user")
+    private List<Device> devices;
+
 }
