@@ -90,7 +90,7 @@ public class AuthService {
 
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String code = encoder.encode(authLoginDTO.getPassword());
-        System.out.println( "Code" + code);
+        System.out.println("Code" + code);
 
         if (!encoder.matches(authLoginDTO.getPassword(), userAuthProvider.getPassword())) {
 
@@ -145,6 +145,7 @@ public class AuthService {
             user.setPhone("");
             user.setIsActive(true);
             user.setGender(GenderEnum.OTHER);
+            user.setAvatarUrl("avt.png");
 
             userRepository.save(user);
 
@@ -195,6 +196,7 @@ public class AuthService {
         newUser.setRole(UserRoleEnum.ROLE_CUSTOMER);
         newUser.setIsActive(true);
         newUser.setGender(GenderEnum.OTHER);
+        newUser.setAvatarUrl("avt.png");
 
         userRepository.save(newUser);
 
