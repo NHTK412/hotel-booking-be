@@ -9,12 +9,15 @@ import com.example.hotelbooking.service.UserService;
 import com.example.hotelbooking.util.ApiResponse;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
+
 
 
 @RestController
@@ -67,5 +70,19 @@ public class UserController {
         return ResponseEntity.ok(response);
 
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/host")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> registerHost(
+            @RequestBody com.example.hotelbooking.dto.user.CreateHostDTO createHostDTO) {
+
+        UserResponseDTO userResponseDTO = userService.registerHost(createHostDTO);
+
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Host registered successfully", userResponseDTO);
+
+        return ResponseEntity.ok(response);
+
+    }
+    
 
 }

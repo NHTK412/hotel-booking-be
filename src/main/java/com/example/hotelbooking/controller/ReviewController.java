@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,14 +33,14 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<List<ReviewSummaryDTO>>> getReviewsByRoomType(@RequestParam Long roomType,
             @RequestParam(required = false, defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "10") Integer size,
-        @RequestParam(required = false) Boolean sort) {
+            @RequestParam(required = false) Boolean sort) {
         List<ReviewSummaryDTO> reviews = reviewService.getReviewsByRoomType(roomType, page, size, sort);
         ApiResponse<List<ReviewSummaryDTO>> response = new ApiResponse<>(true, "Reviews fetched successfully", reviews);
         return ResponseEntity.ok(response);
     }
 
-    // Tạo mới một review
-
+    // Tạo mới một reviewk
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
     public ResponseEntity<ApiResponse<ReviewSummaryDTO>> createReview(
             @AuthenticationPrincipal CustomerUserDetails userDetails,

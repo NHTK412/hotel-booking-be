@@ -30,7 +30,7 @@ public class FileUploadController {
     private FileUploadService fileUploadService;
 
     // Consumer để nói kiểu gửi lên
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    // @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(value = "/image", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<FileUploadResponseDTO>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {

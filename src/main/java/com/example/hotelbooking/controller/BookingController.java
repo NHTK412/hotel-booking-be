@@ -194,6 +194,7 @@ public class BookingController {
 
         // Các endpoint thống kê
         // Số lượng khách hôm nay
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-guests")
         public ResponseEntity<ApiResponse<Long>> getTodayGuests(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -212,7 +213,7 @@ public class BookingController {
         }
 
         // Số lượng khách hôm nay đã checkin
-
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-checkins")
         public ResponseEntity<ApiResponse<Long>> getTodayCheckIns(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -231,7 +232,7 @@ public class BookingController {
         }
 
         // Doanh thu hôm nay
-
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-revenue")
         public ResponseEntity<ApiResponse<Double>> getTodayRevenue(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -250,7 +251,7 @@ public class BookingController {
         }
 
         // Doanh thu tháng này
-
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/month-revenue")
         public ResponseEntity<ApiResponse<Double>> getMonthRevenue(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -271,6 +272,7 @@ public class BookingController {
         // Các endpoint báo cáo doanh thu
 
         // Doanh thu theo ngày trong khoảng thời gian
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/revenue")
         public ResponseEntity<ApiResponse<Double>> getRevenueInDateRange(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -291,6 +293,7 @@ public class BookingController {
         }
 
         // Doanh thu theo tháng
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/monthly-revenue")
         public ResponseEntity<ApiResponse<List<Map<String, Double>>>> getMonthlyRevenue(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -310,6 +313,7 @@ public class BookingController {
         }
 
         // Doanh thu theo năm
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/yearly-revenue")
         public ResponseEntity<ApiResponse<List<Map<String, Double>>>> getYearlyRevenue(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -328,6 +332,7 @@ public class BookingController {
         }
 
         // thống kê statis
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/statistics")
         public ResponseEntity<ApiResponse<Map<String, Object>>> getBookingStatistics(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -356,6 +361,7 @@ public class BookingController {
         // "averagePrice": 2000000.0,
         // "occupancyRate": 85.0
         // }
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/revenue-by-room-type")
         public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRevenueByRoomType(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -377,6 +383,8 @@ public class BookingController {
 
         // 4 endpoint báo cáo theo khoảng thời gian
         // Tổng doanh thu
+
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-revenue")
         public ResponseEntity<ApiResponse<Double>> getTotalRevenueInDateRange(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -397,6 +405,7 @@ public class BookingController {
         }
 
         // Tổng phòng đặt
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-bookings")
         public ResponseEntity<ApiResponse<Long>> getTotalBookingsInDateRange(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -417,6 +426,7 @@ public class BookingController {
         }
 
         // Tổng phòng hủy
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-canceled")
         public ResponseEntity<ApiResponse<Long>> getTotalCanceledBookingsInDateRange(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
@@ -437,6 +447,8 @@ public class BookingController {
         }
 
         // Tổng đêm ở
+
+        @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-nights")
         public ResponseEntity<ApiResponse<Long>> getTotalNightsInDateRange(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,

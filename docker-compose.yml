@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: hotelbooking-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: hotelbooking
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:latest
+    container_name: hotelbooking-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hotelbooking-app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      ACCOUNT_ADMIN_USERNAME: ${ACCOUNT_ADMIN_USERNAME}
+      ACCOUNT_ADMIN_PASSWORD: ${ACCOUNT_ADMIN_PASSWORD}
+
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+volumes:
+  mysql-data:
+  redis-data:
