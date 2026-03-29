@@ -456,8 +456,7 @@ public class BookingService {
                                 Pageable.unpaged()).stream()
                                 .filter(booking -> booking.getCheckOutAt().isAfter(todayStart)
                                                 && booking.getCheckOutAt().isBefore(todayEnd)
-                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
-                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
                                 .mapToDouble(booking -> booking.getFinalPrice())
                                 .sum();
 
@@ -487,8 +486,7 @@ public class BookingService {
                                 Pageable.unpaged()).stream()
                                 .filter(booking -> booking.getCheckOutAt().isAfter(monthStart)
                                                 && booking.getCheckOutAt().isBefore(monthEnd)
-                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
-                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
                                 .mapToDouble(booking -> booking.getFinalPrice())
                                 .sum();
 
@@ -518,8 +516,7 @@ public class BookingService {
                                 Pageable.unpaged()).stream()
                                 .filter(booking -> booking.getCheckOutAt().isAfter(startDateTime)
                                                 && booking.getCheckOutAt().isBefore(endDateTime)
-                                                && (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
-                                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
                                 .mapToDouble(booking -> booking.getFinalPrice())
                                 .sum();
 
@@ -544,8 +541,7 @@ public class BookingService {
                                 accommodationId,
                                 null,
                                 Pageable.unpaged()).stream()
-                                .filter(booking -> (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
-                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .filter(booking -> booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
                                 .filter(booking -> booking.getCheckOutAt().getYear() == year)
                                 .collect(Collectors.groupingBy(
                                                 booking -> booking.getCheckOutAt().getMonthValue(),
@@ -578,8 +574,7 @@ public class BookingService {
                                 accommodationId,
                                 null,
                                 Pageable.unpaged()).stream()
-                                .filter(booking -> (booking.getStatus() != BookingStatusEnum.WAITING_FOR_PAYMENT
-                                                && booking.getStatus() != BookingStatusEnum.CANCELED))
+                                .filter(booking -> booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
                                 .collect(Collectors.groupingBy(
                                                 booking -> booking.getCheckOutAt().getYear(),
                                                 Collectors.summingDouble(booking -> booking.getFinalPrice())))
@@ -591,21 +586,6 @@ public class BookingService {
                 return yearlyRevenues;
 
         }
-
-        // {
-        // "success": true,
-        // "message": "Statistics fetched successfully",
-        // "data": {
-        // "totalBookings": 120,
-        // "completedBookings": 95,
-        // "canceledBookings": 25,
-        // "totalRevenue": 180000000.0,
-        // "averageBookingValue": 1500000.0,
-        // "occupancyRate": 78.5,
-        // "totalGuests": 260,
-        // "totalNights": 410
-        // }
-        // }
 
         public Map<String, Object> getBookingStatistics(
                         String providerId, Long accommodationId,
@@ -655,6 +635,124 @@ public class BookingService {
 
                 return trends;
 
+        }
+
+        public Double getTotalRevenueInDateRange(
+                        String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Double totalRevenue = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckOutAt().isAfter(startDateTime)
+                                                && booking.getCheckOutAt().isBefore(endDateTime)
+                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
+                                .mapToDouble(booking -> booking.getFinalPrice())
+                                .sum();
+
+                return totalRevenue;
+        }
+
+        public Long getTotalBookingsInDateRange(
+                        String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Long totalBookings = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
+                                                && booking.getCheckInAt().isBefore(endDateTime))
+                                .count();
+
+                return totalBookings;
+        }
+
+        public Long getTotalCanceledBookingsInDateRange(
+                        String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Long totalCanceled = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
+                                                && booking.getCheckInAt().isBefore(endDateTime)
+                                                && booking.getStatus() == BookingStatusEnum.CANCELED)
+                                .count();
+
+                return totalCanceled;
+        }
+
+        public Long getTotalNightsInDateRange(
+                        String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                LocalDateTime startDateTime = startDate.atStartOfDay();
+                LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
+
+                Long totalNights = bookingRepository.findBookingsByHost(
+                                accommodationId,
+                                null,
+                                Pageable.unpaged()).stream()
+                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
+                                                && booking.getCheckOutAt().isBefore(endDateTime)
+                                                && booking.getStatus() != BookingStatusEnum.CANCELED)
+                                .mapToLong(booking -> {
+                                        long nights = java.time.temporal.ChronoUnit.DAYS.between(
+                                                        booking.getCheckInAt().toLocalDate(),
+                                                        booking.getCheckOutAt().toLocalDate());
+                                        return nights > 0 ? nights : 0;
+                                })
+                                .sum();
+
+                return totalNights;
         }
 
         @Scheduled(fixedDelay = 60000)
