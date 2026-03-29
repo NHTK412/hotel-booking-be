@@ -18,5 +18,25 @@
     "name": "image-upload-path",
     "type": "java.lang.String",
     "description": "A description for 'image-upload-path'"
+  },
+  {
+    "name": "api.key",
+    "type": "java.lang.String",
+    "description": "A description for 'api.key'"
+  },
+  {
+    "name": "account.admin.username",
+    "type": "java.lang.String",
+    "description": "A description for 'account.admin.username'"
+  },
+  {
+    "name": "account.admin.password",
+    "type": "java.lang.String",
+    "description": "A description for 'account.admin.password'"
+  },
+  {
+    "name": "account.default.password",
+    "type": "java.lang.String",
+    "description": "A description for 'account.default.password'"
   }
 ]}

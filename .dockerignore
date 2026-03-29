@@ -1,0 +1,27 @@
+# Build output
+target/
+*.jar
+*.war
+
+# Logs
+*.log
+
+# Env
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+*.iml
+.vscode
+
+# OS
+.DS_Store
+
+# Docker
+Dockerfile
+.dockerignore

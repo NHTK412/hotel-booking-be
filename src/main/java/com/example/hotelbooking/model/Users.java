@@ -70,13 +70,13 @@ public class Users extends Base {
     @Column(name = "isActive", nullable = false)
     private Boolean isActive;
 
-    @OneToMany(mappedBy = "user")
-    private List<AccommodationStaff> accommodationStaffs;
+    @OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL)
+    private List<AccommodationStaff> accommodationStaffs = new java.util.ArrayList<>();
 
     @ManyToMany(mappedBy = "favoritedByUsers")
     private List<Accommodations> favoriteAccommodations;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL)
     private UserAuthProvider userAuthProvider;
 
     @OneToMany(mappedBy = "user")

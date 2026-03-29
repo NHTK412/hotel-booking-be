@@ -61,18 +61,7 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse<>(true, "OTP sent successfully", otp));
     }
 
-    // xÁC THỰC MÃ OTP
-    // @PostMapping("/verify-otp")
-    // public ResponseEntity<ApiResponse<Map<String, Boolean>>>
-    // verifyOtp(@RequestParam String email,
-    // @RequestParam String otp) {
-    // boolean isValid = authService.verifyOtp(email, otp);
 
-    // final Map<String, Boolean> responseData = new HashMap<>();
-    // responseData.put("isValid", isValid);
-    // return ResponseEntity.ok(new ApiResponse<>(true, "OTP verification result",
-    // responseData));
-    // }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<Map<String, Object>>> verifyOtp(@RequestParam String email,
@@ -94,5 +83,7 @@ public class AuthController {
         Boolean result = authService.resetPassword(email, newPassword);
         return ResponseEntity.ok(new ApiResponse<>(true, "Password reset successful", result));
     }
+
+    
 
 }

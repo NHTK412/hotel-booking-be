@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,7 +47,8 @@ class LocationController {
             @RequestParam(required = false) Double latitude,
             @RequestParam(required = false) Double longitude) {
 
-        LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea, latitude, longitude);
+        LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea,
+                latitude, longitude);
 
         final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
                 true,
@@ -57,8 +59,7 @@ class LocationController {
 
     }
 
-    //  Không cần login
-
+    // Không cần login
     @GetMapping("/calculator")
     public ResponseEntity<ApiResponse<String>> calculateDistanceAndDuration(
             @RequestParam Double lat,
@@ -84,6 +85,5 @@ class LocationController {
         return ResponseEntity.ok(response);
 
     }
-    
 
 }

@@ -1,23 +1,38 @@
 package com.example.hotelbooking.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.user.UserResponseDTO;
+import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.customer.NotFoundException;
+import com.example.hotelbooking.model.AccommodationStaff;
+import com.example.hotelbooking.model.Accommodations;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.model.Users;
+import com.example.hotelbooking.repository.AccommodationRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserService {
-        final UserRepository userRepository;
 
-        final UserAuthProviderRepository userAuthProviderRepository;;
+        @Value("${account.default.password}")
+        private String defaultPassword;
 
-        public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository) {
+        private final UserRepository userRepository;
+
+        private final UserAuthProviderRepository userAuthProviderRepository;
+
+        private final AccommodationRepository accommodationRepository;
+
+        public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository, AccommodationRepository accommodationRepository) {
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
+                this.accommodationRepository = accommodationRepository;
         }
 
         public UserResponseDTO getUserById(Long userId) {
@@ -86,5 +101,55 @@ public class UserService {
                                 .avatarUrl(updatedUser.getAvatarUrl())
 
                                 .build();
+        }
+
+        @Transactional
+        public UserResponseDTO registerHost(com.example.hotelbooking.dto.user.CreateHostDTO createHostDTO) {
+                Users user = new Users();
+
+                user.setName(createHostDTO.getName());
+                user.setEmail(createHostDTO.getEmail());
+                user.setPhone(createHostDTO.getPhone());
+                user.setBirthday(createHostDTO.getBirthday());
+                user.setGender(createHostDTO.getGender());
+                user.setAddress(createHostDTO.getAddress());
+                user.setAvatarUrl(createHostDTO.getAvatarUrl());
+                user.setIsActive(true);
+                user.setRole(UserRoleEnum.ROLE_HOST);
+
+                UserAuthProvider authProvider = new UserAuthProvider();
+                authProvider.setType(com.example.hotelbooking.enums.AuthProviderTypeEnum.LOCAL);
+                authProvider.setProviderUserId(createHostDTO.getEmail());
+
+                BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+                String encodedPassword = passwordEncoder.encode(defaultPassword);
+
+                authProvider.setPassword(encodedPassword);
+
+                authProvider.setUser(user);
+
+                Accommodations accommodation = accommodationRepository.findById(createHostDTO.getAccommodationId())
+                                .orElseThrow(() -> new NotFoundException("Accommodation not found"));
+
+                AccommodationStaff accommodationStaff = new AccommodationStaff();
+                accommodationStaff.setUser(user);
+                accommodationStaff.setAccommodation(accommodation);
+                accommodationStaff.setRole(createHostDTO.getHostRole());
+
+                user.getAccommodationStaffs().add(accommodationStaff);
+
+                Users savedUser = userRepository.save(user);
+
+                return UserResponseDTO.builder()
+                                .id(savedUser.getId())
+                                .name(savedUser.getName())
+                                .email(savedUser.getEmail())
+                                .phone(savedUser.getPhone())
+                                .birthday(savedUser.getBirthday())
+                                .gender(savedUser.getGender().getDisplayName())
+                                .address(savedUser.getAddress())
+                                .avatarUrl(savedUser.getAvatarUrl())
+                                .build();
+
         }
 }
