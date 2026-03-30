@@ -35,6 +35,7 @@ import com.example.hotelbooking.repository.RoomRespository;
 import com.example.hotelbooking.repository.RoomTypeRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
+import com.google.firebase.messaging.FirebaseMessagingException;
 
 import jakarta.transaction.Transactional;
 
@@ -51,14 +52,17 @@ public class BookingService {
 
         final UserAuthProviderRepository userAuthProviderRepository;
 
+        final FcmService fcmService;
+
         public BookingService(BookingRepository bookingRepository, RoomTypeRepository roomTypeRepository,
                         RoomRespository roomRespository, UserRepository userRepository,
-                        UserAuthProviderRepository userAuthProviderRepository) {
+                        UserAuthProviderRepository userAuthProviderRepository, FcmService fcmService) {
                 this.bookingRepository = bookingRepository;
                 this.roomTypeRepository = roomTypeRepository;
                 this.roomRespository = roomRespository;
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
+                this.fcmService = fcmService;
         }
 
         public BookingDetailDTO createBooking(String username,
@@ -767,6 +771,29 @@ public class BookingService {
                 }
 
                 bookingRepository.saveAll(expiredBookings);
+        }
+
+        @Scheduled(cron = "0 0 8 * * ?") // Chạy vào lúc 8 giờ sáng hàng ngày
+        @Transactional
+        public void notificationForTodayCheckIns() throws FirebaseMessagingException {
+                LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+
+                // Lấy danh sách booking có check-in trong ngày hôm nay
+                List<Bookings> todayCheckIns = bookingRepository.findByStatusAndCheckInAtBefore(
+                                BookingStatusEnum.PENDING, todayStart);
+
+                for (Bookings booking : todayCheckIns) {
+                        // Gửi thông báo cho khách hàng
+                        if (booking.getUser().getDevices() != null && !booking.getUser().getDevices().isEmpty()) {
+                                fcmService.sendNotification(
+                                                "Reminder: Upcoming Check-in Today",
+                                                "Dear " + booking.getCustomerName() + ", your check-in for booking ID "
+                                                                + booking.getBookingId()
+                                                                + " is scheduled for today. Please be prepared!",
+                                                booking.getUser().getDevices().getLast().getFcmToken());
+
+                        }
+                }
         }
 
 }

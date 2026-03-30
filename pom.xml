@@ -136,6 +136,13 @@
 			<version>9.4.2</version>
 			<scope>compile</scope>
 		</dependency>
+
+		<!-- Keep Google Auth modules on the same version to avoid runtime CNFEs -->
+		<dependency>
+			<groupId>com.google.auth</groupId>
+			<artifactId>google-auth-library-credentials</artifactId>
+			<version>1.29.0</version>
+		</dependency>
 		
 	</dependencies>
 

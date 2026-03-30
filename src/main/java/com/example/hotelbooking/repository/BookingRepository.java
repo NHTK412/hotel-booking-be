@@ -124,4 +124,6 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
 
         List<Bookings> findByStatusAndExpiredAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
 
+        List<Bookings> findByStatusAndCheckInAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
 }

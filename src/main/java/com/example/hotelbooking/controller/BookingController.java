@@ -10,6 +10,7 @@ import com.example.hotelbooking.enums.BookingStatusEnum;
 import com.example.hotelbooking.security.CustomerUserDetails;
 import com.example.hotelbooking.service.BookingService;
 import com.example.hotelbooking.util.ApiResponse;
+import com.google.firebase.messaging.FirebaseMessagingException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -467,5 +468,15 @@ public class BookingController {
 
                 return ResponseEntity.ok(response);
         }
+
+        // @GetMapping("/notify")
+        // public ResponseEntity<ApiResponse<String>> sendTestNotification(
+        //                 @AuthenticationPrincipal CustomerUserDetails customerUserDetails)
+        //                 throws FirebaseMessagingException {
+        //         bookingService.notificationForTodayCheckIns();
+        //         ApiResponse<String> response = new ApiResponse<>(true, "Test notification sent successfully",
+        //                         null);
+        //         return ResponseEntity.ok(response);
+        // }
 
 }

@@ -38,5 +38,10 @@
     "name": "account.default.password",
     "type": "java.lang.String",
     "description": "A description for 'account.default.password'"
+  },
+  {
+    "name": "firebase.service-account-key-path",
+    "type": "java.lang.String",
+    "description": "A description for 'firebase.service-account-key-path'"
   }
 ]}
