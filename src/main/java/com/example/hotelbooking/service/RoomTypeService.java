@@ -36,12 +36,16 @@ public class RoomTypeService {
 
     private final AccommodationRepository accommodationRepository;
 
+    private final FileUploadService fileUploadService;
+
     public RoomTypeService(RoomTypeRepository roomTypeRepository,
             UserAuthProviderRepository userAuthProviderRepository,
-            AccommodationRepository accommodationRepository) {
+            AccommodationRepository accommodationRepository,
+            FileUploadService fileUploadService) {
         this.roomTypeRepository = roomTypeRepository;
         this.userAuthProviderRepository = userAuthProviderRepository;
         this.accommodationRepository = accommodationRepository;
+        this.fileUploadService = fileUploadService;
     }
 
     public RoomTypeDetailDTO getRoomTypeById(Long roomTypeId) {
@@ -112,8 +116,18 @@ public class RoomTypeService {
         roomType.setStar(0);
         roomType.setPrice(roomTypeRequestDTO.getPrice());
         roomType.setDiscount(roomTypeRequestDTO.getDiscount());
-        roomType.setImage(roomTypeRequestDTO.getImage());
-        roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+        // roomType.setImage(roomTypeRequestDTO.getImage());
+        if (roomTypeRequestDTO.getImage() != null) {
+            roomType.setImage(roomTypeRequestDTO.getImage());
+            fileUploadService.deleteFile(roomTypeRequestDTO.getImage());
+        }
+        // roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+        if (roomTypeRequestDTO.getImagesPreview() != null) {
+            roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+            roomTypeRequestDTO.getImagesPreview().forEach(image -> {
+                fileUploadService.deleteFile(image);
+            });
+        }
         roomType.setDescription(roomTypeRequestDTO.getDescription());
         roomType.setCapacity(roomTypeRequestDTO.getCapacity());
         roomType.setBedroom(roomTypeRequestDTO.getBedroom());

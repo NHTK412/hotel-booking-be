@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.hotelbooking.service.FileUploadService;
 import com.example.hotelbooking.util.ApiResponse;
 import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
+import org.springframework.web.bind.annotation.RequestBody;
 
 // import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
 // import com.example.hotelbooking.service.FileUploadService;
@@ -29,37 +30,18 @@ public class FileUploadController {
     @Autowired
     private FileUploadService fileUploadService;
 
-    // Consumer để nói kiểu gửi lên
-    // @PreAuthorize("hasAnyRole('ADMIN')")
-    @PostMapping(value = "/image", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse<FileUploadResponseDTO>> uploadImage(@RequestParam("file") MultipartFile file) {
-        try {
-            FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.uploadImage(file);
-            return ResponseEntity.ok(new ApiResponse<>(true, null, fileUploadResponseDTO));
-        } catch (IOException e) {
-            return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false, "Unable to save file due to I/O error:" + e.getMessage(), null));
-        }
+    @PostMapping(value = "/cdn", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<FileUploadResponseDTO>> uploadToCdn(@RequestParam("file") MultipartFile file)
+            throws IOException {
+        FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.uploadFileToCloudinary(file);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Upload successful", fileUploadResponseDTO));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    @PostMapping(value = "/multiple", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse<List<FileUploadResponseDTO>>> uploadMultipleImage(
-            @RequestParam("files") List<MultipartFile> files) {
-        try {
-            List<FileUploadResponseDTO> fileUploadResponseDTOs = fileUploadService.uploadMultipleImage(files);
-            return ResponseEntity.ok(new ApiResponse<>(true, null, fileUploadResponseDTOs));
-        } catch (IOException e) {
-            return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false, "Unable to save file due to I/O error:" + e.getMessage(), null));
-        }
+    @PostMapping(value = "/cdn/multiple", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<List<FileUploadResponseDTO>>> uploadMultipleFilesToCdn(
+            @RequestParam("files") List<MultipartFile> files)
+            throws IOException {
+        List<FileUploadResponseDTO> fileUploadResponseDTOs = fileUploadService.uploadMultipleFilesToCloudinary(files);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Upload successful", fileUploadResponseDTOs));
     }
-
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    @DeleteMapping("/{fileName}")
-    public ResponseEntity<ApiResponse<FileUploadResponseDTO>> deleteImage(@PathVariable String fileName) {
-        FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.deleteImage(fileName);
-        return ResponseEntity.ok(new ApiResponse<>(true, null, fileUploadResponseDTO));
-    }
-
 }

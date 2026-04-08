@@ -35,7 +35,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class AuthService {
 
-    private final AccessDeniedHandlerException accessDeniedHandlerException;
+    // private final AccessDeniedHandlerException accessDeniedHandlerException;
 
     private final UserRepository userRepository;
 
@@ -53,15 +53,16 @@ public class AuthService {
     // this.userRepository = userRepository;
     public AuthService(
             UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository, JwtUtil jwtUtil,
-            RedisTemplate<String, String> redisTemplate, MailService mailService,
-            AccessDeniedHandlerException accessDeniedHandlerException) {
+            RedisTemplate<String, String> redisTemplate, MailService mailService
+            // AccessDeniedHandlerException accessDeniedHandlerException
+        ) {
 
         this.userRepository = userRepository;
         this.userAuthProviderRepository = userAuthProviderRepository;
         this.jwtUtil = jwtUtil;
         this.redisTemplate = redisTemplate;
         this.mailService = mailService;
-        this.accessDeniedHandlerException = accessDeniedHandlerException;
+        // this.accessDeniedHandlerException = accessDeniedHandlerException;
     }
 
     @Transactional

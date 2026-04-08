@@ -43,5 +43,20 @@
     "name": "firebase.service-account-key-path",
     "type": "java.lang.String",
     "description": "A description for 'firebase.service-account-key-path'"
+  },
+  {
+    "name": "cdn.cloud-name",
+    "type": "java.lang.String",
+    "description": "A description for 'cdn.cloud-name'"
+  },
+  {
+    "name": "cdn.api-key",
+    "type": "java.lang.String",
+    "description": "A description for 'cdn.api-key'"
+  },
+  {
+    "name": "cdn.api-secret",
+    "type": "java.lang.String",
+    "description": "A description for 'cdn.api-secret'"
   }
 ]}

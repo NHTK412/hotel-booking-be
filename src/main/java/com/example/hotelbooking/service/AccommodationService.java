@@ -33,13 +33,16 @@ public class AccommodationService {
         private final UserRepository userRepository;
         private final UserAuthProviderRepository userAuthProviderRepository;
         private final LocationRepository locationRepository;
+        private final FileUploadService fileUploadService;
 
         public AccommodationService(AccommodationRepository accommodationRepository, UserRepository userRepository,
-                        LocationRepository locationRepository, UserAuthProviderRepository userAuthProviderRepository) {
+                        LocationRepository locationRepository, UserAuthProviderRepository userAuthProviderRepository,
+                        FileUploadService fileUploadService) {
                 this.accommodationRepository = accommodationRepository;
                 this.userRepository = userRepository;
                 this.locationRepository = locationRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
+                this.fileUploadService = fileUploadService;
         }
 
         public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
@@ -192,7 +195,11 @@ public class AccommodationService {
                 accommodation.setCity(accommodationRequestDTO.getCity());
                 accommodation.setLatitude(accommodationRequestDTO.getLatitude());
                 accommodation.setLongitude(accommodationRequestDTO.getLongitude());
-                accommodation.setImage(accommodationRequestDTO.getImage());
+                // accommodation.setImage(accommodationRequestDTO.getImage());
+                if (accommodationRequestDTO.getImage() != null) {
+                        accommodation.setImage(accommodationRequestDTO.getImage());
+                        fileUploadService.deleteFile(accommodationRequestDTO.getImage());
+                }
                 accommodation.setType(accommodationRequestDTO.getType());
 
                 accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
@@ -232,7 +239,11 @@ public class AccommodationService {
                 accommodation.setCity(accommodationRequestDTO.getCity());
                 accommodation.setLatitude(accommodationRequestDTO.getLatitude());
                 accommodation.setLongitude(accommodationRequestDTO.getLongitude());
-                accommodation.setImage(accommodationRequestDTO.getImage());
+                // accommodation.setImage(accommodationRequestDTO.getImage());
+                if (accommodationRequestDTO.getImage() != null) {
+                        accommodation.setImage(accommodationRequestDTO.getImage());
+                        fileUploadService.deleteFile(accommodationRequestDTO.getImage());
+                }
                 accommodation.setType(accommodationRequestDTO.getType());
                 accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
                                 .orElseThrow(() -> new NotFoundException("Location not found")));

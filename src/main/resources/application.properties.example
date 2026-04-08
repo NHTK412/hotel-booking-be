@@ -32,3 +32,5 @@ image-upload-path = src/main/resources/static/images
 # Cấu hình kích thước tối đa của file upload
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
+spring.output.ansi.enabled=ALWAYS
+
