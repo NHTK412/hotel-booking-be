@@ -55,8 +55,8 @@ public class FileUploadService {
 
         UploadedFile uploadedFile = new UploadedFile();
         uploadedFile.setFileUrl(fileUploadResponseDTO.getFilePath());
-        // uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
-        uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)); // Test code nên để thời gian ngắn hơn cụ thể là 1 phút
+        uploadedFile.setExpireAt(System.currentTimeMillis() +
+                TimeUnit.HOURS.toMillis(1));
 
         uploadedFile.setFileType((String) uploadResult.get("resource_type"));
         uploadedFile.setPublicId((String) uploadResult.get("public_id"));
@@ -103,6 +103,51 @@ public class FileUploadService {
         uploadedFileRepository.delete(uploadedFile);
         return true;
 
+    }
+
+    @Transactional
+    public boolean deleteFileByPublicId(String fileUrl) {
+        try {
+            String publicId = getPublicIdFromUrl(fileUrl);
+            if (publicId == null) {
+                logger.error("Failed to extract public_id from URL: " + fileUrl);
+                return false;
+            }
+            String resourceType = getResourceTypeFromUrl(fileUrl);
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
+            return true;
+
+        } catch (Exception e) {
+            logger.error("Failed to delete file: " + fileUrl, e);
+            return false;
+        }
+    }
+
+    private String getResourceTypeFromUrl(String url) {
+        if (url.contains("/image/")) {
+            return "image";
+        } else if (url.contains("/video/")) {
+            return "video";
+        } else if (url.contains("/raw/")) {
+            return "raw";
+        } else {
+            return "auto";
+        }
+    }
+
+    private String getPublicIdFromUrl(String url) {
+        String[] urlParts = url.split("/");
+        for (int i = 0; i < urlParts.length; i++) {
+            if (urlParts[i].startsWith("v") && urlParts[i].substring(1).matches("\\d+")) {
+                StringBuilder sb = new StringBuilder();
+                for (int j = i + 1; j < urlParts.length; j++) {
+                    sb.append(urlParts[j]).append("/");
+                }
+                String path = sb.substring(0, sb.length() - 1);
+                return path.split("\\.")[0];
+            }
+        }
+        return null;
     }
 
 }
