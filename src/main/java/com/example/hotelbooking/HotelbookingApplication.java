@@ -1,5 +1,6 @@
 package com.example.hotelbooking;
 
+import org.slf4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -12,6 +13,8 @@ public class HotelbookingApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(HotelbookingApplication.class, args);
+		Logger logger = org.slf4j.LoggerFactory.getLogger(HotelbookingApplication.class);
+		logger.info("Hotel Booking Application started successfully.");
 	}
 
 }

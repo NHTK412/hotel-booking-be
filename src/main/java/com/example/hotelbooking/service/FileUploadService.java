@@ -1,6 +1,5 @@
 package com.example.hotelbooking.service;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,18 +9,26 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class FileUploadService {
 
     @Value("${image-upload-path}")
     private String imagePathString;
+
+    private final Cloudinary cloudinary;
 
     public FileUploadResponseDTO uploadImage(MultipartFile file) throws IOException {
 
@@ -85,4 +92,19 @@ public class FileUploadService {
         }
         return fileUploadResponseDTOs;
     }
+
+    public FileUploadResponseDTO uploadFileToCloudinary(MultipartFile file) throws IOException {
+
+        var uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", "uploads",
+                "resource_type", "auto"));
+
+        FileUploadResponseDTO fileUploadResponseDTO = new FileUploadResponseDTO();
+        fileUploadResponseDTO.setFileName((String) uploadResult.get("public_id"));
+        fileUploadResponseDTO.setFilePath((String) uploadResult.get("secure_url"));
+        
+        return fileUploadResponseDTO;
+
+    }
+
 }

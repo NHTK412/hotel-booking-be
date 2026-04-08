@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.hotelbooking.service.FileUploadService;
 import com.example.hotelbooking.util.ApiResponse;
 import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
+import org.springframework.web.bind.annotation.RequestBody;
 
 // import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
 // import com.example.hotelbooking.service.FileUploadService;
@@ -60,6 +61,13 @@ public class FileUploadController {
     public ResponseEntity<ApiResponse<FileUploadResponseDTO>> deleteImage(@PathVariable String fileName) {
         FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.deleteImage(fileName);
         return ResponseEntity.ok(new ApiResponse<>(true, null, fileUploadResponseDTO));
+    }
+
+    @PostMapping(value = "/cdn/image", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<FileUploadResponseDTO>> uploadToCdn(@RequestParam("file") MultipartFile file)
+            throws IOException {
+        FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.uploadFileToCloudinary(file);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Upload successful", fileUploadResponseDTO));
     }
 
 }
