@@ -26,5 +26,11 @@ public class UploadedFile {
     private String fileUrl;
 
     @Column(nullable = false)
+    private String publicId;
+
+    @Column(nullable = false)
+    private String fileType;
+
+    @Column(nullable = false)
     private Long expireAt;
 }

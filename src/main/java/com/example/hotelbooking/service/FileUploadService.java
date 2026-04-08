@@ -55,11 +55,28 @@ public class FileUploadService {
 
         UploadedFile uploadedFile = new UploadedFile();
         uploadedFile.setFileUrl(fileUploadResponseDTO.getFilePath());
-        uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
+        // uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
+        uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)); // Test code nên để thời gian ngắn hơn cụ thể là 1 phút
+
+        uploadedFile.setFileType((String) uploadResult.get("resource_type"));
+        uploadedFile.setPublicId((String) uploadResult.get("public_id"));
+
         uploadedFileRepository.save(uploadedFile);
 
         return fileUploadResponseDTO;
 
+    }
+
+    @Transactional
+    public List<FileUploadResponseDTO> uploadMultipleFilesToCloudinary(List<MultipartFile> files) throws IOException {
+        List<FileUploadResponseDTO> fileUploadResponseDTOs = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            FileUploadResponseDTO fileUploadResponseDTO = uploadFileToCloudinary(file);
+            fileUploadResponseDTOs.add(fileUploadResponseDTO);
+        }
+
+        return fileUploadResponseDTOs;
     }
 
     @Scheduled(fixedDelay = 3600000)
@@ -68,8 +85,8 @@ public class FileUploadService {
 
         for (UploadedFile file : expiredFiles) {
             try {
-                cloudinary.uploader().destroy(file.getFileUrl(), ObjectUtils.asMap(
-                        "resource_type", "auto"));
+                cloudinary.uploader().destroy(file.getPublicId(), ObjectUtils.asMap(
+                        "resource_type", file.getFileType()));
             } catch (Exception e) {
                 logger.error("Failed to delete file from Cloudinary: " + file.getFileUrl(), e);
             }

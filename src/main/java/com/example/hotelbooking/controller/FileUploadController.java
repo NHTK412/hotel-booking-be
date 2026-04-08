@@ -30,11 +30,18 @@ public class FileUploadController {
     @Autowired
     private FileUploadService fileUploadService;
 
-    @PostMapping(value = "/cdn/image", consumes = "multipart/form-data")
+    @PostMapping(value = "/cdn", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<FileUploadResponseDTO>> uploadToCdn(@RequestParam("file") MultipartFile file)
             throws IOException {
         FileUploadResponseDTO fileUploadResponseDTO = fileUploadService.uploadFileToCloudinary(file);
         return ResponseEntity.ok(new ApiResponse<>(true, "Upload successful", fileUploadResponseDTO));
     }
 
+    @PostMapping(value = "/cdn/multiple", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<List<FileUploadResponseDTO>>> uploadMultipleFilesToCdn(
+            @RequestParam("files") List<MultipartFile> files)
+            throws IOException {
+        List<FileUploadResponseDTO> fileUploadResponseDTOs = fileUploadService.uploadMultipleFilesToCloudinary(files);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Upload successful", fileUploadResponseDTOs));
+    }
 }
