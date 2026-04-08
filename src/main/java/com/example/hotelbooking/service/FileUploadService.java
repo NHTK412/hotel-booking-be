@@ -10,15 +10,23 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
+import com.example.hotelbooking.exception.customer.NotFoundException;
+import com.example.hotelbooking.model.UploadedFile;
+import com.example.hotelbooking.repository.UploadedFileRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -30,69 +38,11 @@ public class FileUploadService {
 
     private final Cloudinary cloudinary;
 
-    public FileUploadResponseDTO uploadImage(MultipartFile file) throws IOException {
+    private final UploadedFileRepository uploadedFileRepository;
 
-        String originalFileName = file.getOriginalFilename();
+    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(FileUploadService.class);
 
-        // Tạo một tên file duy nhất bằng cách thêm Timestamp vào.
-        // Ví dụ: 20251027150000_originalFileName.jpg
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String newFileName = timestamp + "_" + originalFileName;
-
-        // Paths.get(chuỗi_đường_dẫn_gốc, tên_file_mới)
-        // Phương thức resolve() giúp nối đường dẫn một cách an toàn.
-        Path destinationPath = Paths.get(imagePathString).resolve(newFileName);
-
-        // Nếu thư mục không tồn tại, tạo nó
-        Files.createDirectories(destinationPath.getParent());
-
-        // Thực hiện lưu file
-        file.transferTo(destinationPath);
-
-        FileUploadResponseDTO fileUploadResponseDTO = new FileUploadResponseDTO();
-        fileUploadResponseDTO.setFileName(newFileName);
-        fileUploadResponseDTO.setFilePath(destinationPath.toString());
-
-        return fileUploadResponseDTO;
-    }
-
-    public FileUploadResponseDTO deleteImage(String fileName) {
-        FileUploadResponseDTO fileUploadResponseDTO = new FileUploadResponseDTO();
-
-        Path destinationPath = Paths.get(imagePathString).resolve(fileName);
-
-        File image = destinationPath.toFile();
-
-        fileUploadResponseDTO.setFileName(image.getName());
-        fileUploadResponseDTO.setFilePath(image.getPath());
-
-        image.delete();
-
-        return fileUploadResponseDTO;
-    }
-
-    public List<FileUploadResponseDTO> uploadMultipleImage(List<MultipartFile> files) throws IOException {
-        List<FileUploadResponseDTO> fileUploadResponseDTOs = new ArrayList<>();
-        for (MultipartFile file : files) {
-            String originalFileName = file.getOriginalFilename();
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-
-            String newFileName = timestamp + "_" + originalFileName;
-            Path destinationPath = Paths.get(imagePathString).resolve(newFileName);
-
-            Files.createDirectories(destinationPath.getParent());
-
-            file.transferTo(destinationPath);
-
-            FileUploadResponseDTO fileUploadResponseDTO = new FileUploadResponseDTO();
-            fileUploadResponseDTO.setFileName(newFileName);
-            fileUploadResponseDTO.setFileName(destinationPath.toString());
-
-            fileUploadResponseDTOs.add(fileUploadResponseDTO);
-        }
-        return fileUploadResponseDTOs;
-    }
-
+    @Transactional
     public FileUploadResponseDTO uploadFileToCloudinary(MultipartFile file) throws IOException {
 
         var uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -102,8 +52,39 @@ public class FileUploadService {
         FileUploadResponseDTO fileUploadResponseDTO = new FileUploadResponseDTO();
         fileUploadResponseDTO.setFileName((String) uploadResult.get("public_id"));
         fileUploadResponseDTO.setFilePath((String) uploadResult.get("secure_url"));
-        
+
+        UploadedFile uploadedFile = new UploadedFile();
+        uploadedFile.setFileUrl(fileUploadResponseDTO.getFilePath());
+        uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
+        uploadedFileRepository.save(uploadedFile);
+
         return fileUploadResponseDTO;
+
+    }
+
+    @Scheduled(fixedDelay = 3600000)
+    public void deleteExpiredFiles() {
+        List<UploadedFile> expiredFiles = uploadedFileRepository.findAllExpiredFiles(System.currentTimeMillis());
+
+        for (UploadedFile file : expiredFiles) {
+            try {
+                cloudinary.uploader().destroy(file.getFileUrl(), ObjectUtils.asMap(
+                        "resource_type", "auto"));
+            } catch (Exception e) {
+                logger.error("Failed to delete file from Cloudinary: " + file.getFileUrl(), e);
+            }
+            uploadedFileRepository.delete(file);
+        }
+    }
+
+    @Transactional
+    public boolean deleteFile(String fileUrl) {
+
+        UploadedFile uploadedFile = uploadedFileRepository.findByFileUrl(fileUrl)
+                .orElseThrow(() -> new NotFoundException("File Not Found"));
+
+        uploadedFileRepository.delete(uploadedFile);
+        return true;
 
     }
 

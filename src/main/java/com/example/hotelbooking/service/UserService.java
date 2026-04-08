@@ -1,5 +1,7 @@
 package com.example.hotelbooking.service;
 
+import java.io.File;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,10 +31,14 @@ public class UserService {
 
         private final AccommodationRepository accommodationRepository;
 
-        public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository, AccommodationRepository accommodationRepository) {
+        private final FileUploadService fileUploadService;
+
+        public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository,
+                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService) {
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
                 this.accommodationRepository = accommodationRepository;
+                this.fileUploadService = fileUploadService;
         }
 
         public UserResponseDTO getUserById(Long userId) {
@@ -86,7 +92,10 @@ public class UserService {
                 user.setBirthday(userReqquestDTO.getBirthday());
                 user.setGender(userReqquestDTO.getGender());
                 user.setAddress(userReqquestDTO.getAddress());
-                user.setAvatarUrl(userReqquestDTO.getAvatarUrl());
+                if (userReqquestDTO.getAvatarUrl() != null) {
+                        user.setAvatarUrl(userReqquestDTO.getAvatarUrl());
+                        fileUploadService.deleteFile(user.getAvatarUrl());
+                }
 
                 Users updatedUser = userRepository.save(user);
 
@@ -113,7 +122,11 @@ public class UserService {
                 user.setBirthday(createHostDTO.getBirthday());
                 user.setGender(createHostDTO.getGender());
                 user.setAddress(createHostDTO.getAddress());
-                user.setAvatarUrl(createHostDTO.getAvatarUrl());
+
+                if (createHostDTO.getAvatarUrl() != null) {
+                        user.setAvatarUrl(createHostDTO.getAvatarUrl());
+                        fileUploadService.deleteFile(user.getAvatarUrl());
+                }
                 user.setIsActive(true);
                 user.setRole(UserRoleEnum.ROLE_HOST);
 
