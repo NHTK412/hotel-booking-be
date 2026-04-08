@@ -164,8 +164,31 @@ public class RoomTypeService {
         roomType.setName(roomTypeRequestDTO.getName());
         roomType.setPrice(roomTypeRequestDTO.getPrice());
         roomType.setDiscount(roomTypeRequestDTO.getDiscount());
-        roomType.setImage(roomTypeRequestDTO.getImage());
-        roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+
+        // Xóa file cũ
+        if (roomType.getImage() != null) {
+            fileUploadService.deleteFile(roomType.getImage());
+        }
+        if (roomType.getImagesPreview() != null) {
+            roomType.getImagesPreview().forEach(image -> {
+                fileUploadService.deleteFile(image);
+            });
+        }
+
+        if (roomTypeRequestDTO.getImage() != null) {
+            roomType.setImage(roomTypeRequestDTO.getImage());
+            fileUploadService.deleteFileByPublicId(roomTypeRequestDTO.getImage());
+        }
+
+        if (roomTypeRequestDTO.getImagesPreview() != null) {
+            roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+            roomTypeRequestDTO.getImagesPreview().forEach(image -> {
+                fileUploadService.deleteFileByPublicId(image);
+            });
+        }
+
+        // roomType.setImage(roomTypeRequestDTO.getImage());
+        // roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
         // Update other fields as necessary
 
         roomType.setAmenities(roomTypeRequestDTO.getAmenities());

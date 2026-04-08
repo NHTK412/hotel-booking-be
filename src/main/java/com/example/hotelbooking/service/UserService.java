@@ -92,6 +92,10 @@ public class UserService {
                 user.setBirthday(userReqquestDTO.getBirthday());
                 user.setGender(userReqquestDTO.getGender());
                 user.setAddress(userReqquestDTO.getAddress());
+                if (user.getAvatarUrl() != null) {
+                        fileUploadService.deleteFileByPublicId(user.getAvatarUrl());
+                }
+
                 if (userReqquestDTO.getAvatarUrl() != null) {
                         user.setAvatarUrl(userReqquestDTO.getAvatarUrl());
                         fileUploadService.deleteFile(user.getAvatarUrl());
