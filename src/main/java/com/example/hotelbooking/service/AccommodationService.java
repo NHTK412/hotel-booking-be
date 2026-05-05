@@ -456,4 +456,14 @@ public class AccommodationService {
                                 .toList();
         }
 
+        public List<AccommodationSummaryDTO> getAccommodationsByUsername(
+                        String username) {
+                List<Accommodations> accommodations = accommodationRepository
+                                .findByStaffMembers_User_UserAuthProvider_ProviderUserId(username);
+
+                return accommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
 }

@@ -67,8 +67,7 @@ public class AccommodationController {
                         @AuthenticationPrincipal CustomerUserDetails userDetails,
                         @PathVariable Long accommodationId) {
 
-
-                                final String providerId = userDetails.getUsername();
+                final String providerId = userDetails.getUsername();
 
                 AccommodationDetailDTO accommodationDetailDTO = accommodationService
                                 .getAccommodationById(providerId, accommodationId);
@@ -203,6 +202,27 @@ public class AccommodationController {
 
                 return ResponseEntity.ok(response);
 
+        }
+
+        // @GetMapping("/user/{userId}")
+        @PreAuthorize("hasAnyRole('HOST')")
+        @GetMapping("/user/me")
+        public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAccommodationsByCurrentUser(
+                        // public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>>
+                        // getAccommodationsByUserId(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails
+        // @PathVariable Integer userId
+        ) {
+
+                String providerId = customerUserDetails.getUsername();
+                List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
+                                .getAccommodationsByUsername(providerId);
+
+                ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
+                                "Accommodations fetched successfully",
+                                accommodationSummaryDTOs);
+
+                return ResponseEntity.ok(response);
         }
 
 }

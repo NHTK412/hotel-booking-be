@@ -22,7 +22,6 @@ public class UserResponseDTO {
 
     private String phone;
 
-
     private LocalDateTime birthday;
 
     private String gender;
@@ -30,6 +29,8 @@ public class UserResponseDTO {
     private String address;
 
     private String avatarUrl;
+
+    private UserRoleEnum role;
 
     // private UserRoleEnum role;
 

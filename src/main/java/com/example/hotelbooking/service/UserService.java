@@ -75,6 +75,7 @@ public class UserService {
                                 .gender(user.getGender().getDisplayName())
                                 .address(user.getAddress())
                                 .avatarUrl(user.getAvatarUrl())
+                                .role(user.getRole())
                                 .build();
         }
 
@@ -112,7 +113,7 @@ public class UserService {
                                 .gender(updatedUser.getGender().getDisplayName())
                                 .address(updatedUser.getAddress())
                                 .avatarUrl(updatedUser.getAvatarUrl())
-
+                                .role(updatedUser.getRole())
                                 .build();
         }
 

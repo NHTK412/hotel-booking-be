@@ -66,4 +66,6 @@ public interface AccommodationRepository extends JpaRepository<Accommodations, L
                                 """)
         Page<Accommodations> findByLocationIdAndTypeSortedByStar(@Param("locationId") Long locationId,
                         @Param("type") AccommodationTypeEnum type, Pageable pageable);
+
+        List<Accommodations> findByStaffMembers_User_UserAuthProvider_ProviderUserId(String providerUserId);
 }

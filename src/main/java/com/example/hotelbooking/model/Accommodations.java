@@ -78,7 +78,6 @@ public class Accommodations extends Base {
     @Column(name = "geohash", length = 12)
     private String geohash;
 
-
     @ManyToOne
     @JoinColumn(name = "locationId", nullable = false)
     private Location location;
