@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -97,9 +98,16 @@ public class FileUploadService {
     @Transactional
     public boolean deleteFile(String fileUrl) {
 
-        UploadedFile uploadedFile = uploadedFileRepository.findByFileUrl(fileUrl)
-                .orElseThrow(() -> new NotFoundException("File Not Found"));
+        // UploadedFile uploadedFile = uploadedFileRepository.findByFileUrl(fileUrl)
+        // .orElseThrow(() -> new NotFoundException("File Not Found"));
 
+        Optional<UploadedFile> optionalUploadedFile = uploadedFileRepository.findByFileUrl(fileUrl);
+
+        if (optionalUploadedFile.isEmpty()) {
+            return false;
+        }
+
+        UploadedFile uploadedFile = optionalUploadedFile.get();
         uploadedFileRepository.delete(uploadedFile);
         return true;
 

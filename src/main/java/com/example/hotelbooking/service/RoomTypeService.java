@@ -169,31 +169,46 @@ public class RoomTypeService {
 
         // Xóa file cũ
         if (!roomType.getImage().equals(roomTypeRequestDTO.getImage())) {
-            fileUploadService.deleteFile(roomType.getImage());
-        }
-        if (roomType.getImagesPreview() != null) {
-            roomType.getImagesPreview().forEach(image -> {
-                if (!roomTypeRequestDTO.getImagesPreview().contains(image)) {
-                    fileUploadService.deleteFile(image);
-                }
-            });
+            try {
+                fileUploadService.deleteFileByPublicId(roomType.getImage());
+            } catch (Exception e) {
+                Logger logger = LoggerFactory.getLogger(RoomTypeService.class);
+                logger.error("Failed to delete old image with publicId: " + roomType.getImage(), e);
+            }
         }
 
         if (roomTypeRequestDTO.getImage() != null) {
             roomType.setImage(roomTypeRequestDTO.getImage());
-            fileUploadService.deleteFileByPublicId(roomTypeRequestDTO.getImage());
+            fileUploadService.deleteFile(roomTypeRequestDTO.getImage());
         }
 
-        if (roomTypeRequestDTO.getImagesPreview() != null) {
-            roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
-            roomTypeRequestDTO.getImagesPreview().forEach(image -> {
-                fileUploadService.deleteFileByPublicId(image);
+        if (roomType.getImagesPreview() != null) {
+            roomType.getImagesPreview().forEach(image -> {
+                if (!roomTypeRequestDTO.getImagesPreview().contains(image)) {
+                    try {
+                        fileUploadService.deleteFile(image);
+                    } catch (Exception e) {
+                        Logger logger = LoggerFactory.getLogger(RoomTypeService.class);
+                        logger.error("Failed to delete old preview image with publicId: " + image, e);
+                    }
+                }
             });
-        }
 
-        // roomType.setImage(roomTypeRequestDTO.getImage());
-        // roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
-        // Update other fields as necessary
+            // CÁC ẢNH ĐÃ BỊ XÓA
+            List<String> deletedImages = roomType.getImagesPreview().stream()
+                    .filter(image -> !roomTypeRequestDTO.getImagesPreview().contains(image))
+                    .toList();
+            deletedImages.forEach(image -> {
+                try {
+                    fileUploadService.deleteFileByPublicId(image);
+                } catch (Exception e) {
+                    Logger logger = LoggerFactory.getLogger(RoomTypeService.class);
+                    logger.error("Failed to delete old preview image with publicId: " + image, e);
+                }
+            });
+
+            roomType.setImagesPreview(roomTypeRequestDTO.getImagesPreview());
+        }
 
         roomType.setAmenities(roomTypeRequestDTO.getAmenities());
         roomType.setDescription(roomTypeRequestDTO.getDescription());
