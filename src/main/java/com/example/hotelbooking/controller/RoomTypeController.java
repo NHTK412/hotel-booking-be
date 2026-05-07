@@ -7,6 +7,7 @@ import java.util.List;
 // org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -116,6 +117,25 @@ public class RoomTypeController {
                                 pageable);
 
                 ApiResponse<List<RoomTypeSummaryDTO>> response = new ApiResponse<>(true,
+                                "Room types retrieved successfully",
+                                roomTypes);
+
+                return ResponseEntity.ok(response);
+        }
+
+        @GetMapping("/accommodations/{accommodationId}/page")
+        public ResponseEntity<ApiResponse<Page<RoomTypeSummaryDTO>>> getRoomTypesPageByAccommodation(
+                        @PathVariable Long accommodationId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+
+                Pageable pageable = PageRequest.of(page, size);
+
+                Page<RoomTypeSummaryDTO> roomTypes = roomTypeService.getRoomTypesPageByAccommodation(
+                                accommodationId,
+                                pageable);
+
+                ApiResponse<Page<RoomTypeSummaryDTO>> response = new ApiResponse<>(true,
                                 "Room types retrieved successfully",
                                 roomTypes);
 

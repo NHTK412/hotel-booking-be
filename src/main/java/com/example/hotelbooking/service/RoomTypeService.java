@@ -5,7 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
-// import org.springframework.security.web.access.AccessDeniedHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.room.RoomRequestDTO;
@@ -166,12 +168,14 @@ public class RoomTypeService {
         roomType.setDiscount(roomTypeRequestDTO.getDiscount());
 
         // Xóa file cũ
-        if (roomType.getImage() != null) {
+        if (!roomType.getImage().equals(roomTypeRequestDTO.getImage())) {
             fileUploadService.deleteFile(roomType.getImage());
         }
         if (roomType.getImagesPreview() != null) {
             roomType.getImagesPreview().forEach(image -> {
-                fileUploadService.deleteFile(image);
+                if (!roomTypeRequestDTO.getImagesPreview().contains(image)) {
+                    fileUploadService.deleteFile(image);
+                }
             });
         }
 
@@ -192,6 +196,9 @@ public class RoomTypeService {
         // Update other fields as necessary
 
         roomType.setAmenities(roomTypeRequestDTO.getAmenities());
+        roomType.setDescription(roomTypeRequestDTO.getDescription());
+        roomType.setCapacity(roomTypeRequestDTO.getCapacity());
+        roomType.setBedroom(roomTypeRequestDTO.getBedroom());
 
         RoomTypes updatedRoomType = roomTypeRepository.save(roomType);
         return mapToRoomTypeDetailDTO(updatedRoomType);
@@ -343,6 +350,24 @@ public class RoomTypeService {
                 .discount(roomType.getDiscount())
                 .address(roomType.getAccommodation().getAddress()) // Thêm địa chỉ vào DTO
                 .build()).toList();
+    }
+
+    public Page<RoomTypeSummaryDTO> getRoomTypesPageByAccommodation(
+            Long accommodationId,
+            Pageable pageable) {
+
+        Page<RoomTypes> roomTypesPage = roomTypeRepository
+                .findByAccommodation_AccommodationIdAndIsDeletedFalse(accommodationId, pageable);
+
+        return roomTypesPage.map(roomType -> RoomTypeSummaryDTO.builder()
+                .roomtypeId(roomType.getRoomtypeId())
+                .name(roomType.getName())
+                .star(roomType.getStar())
+                .price(roomType.getPrice())
+                .image(roomType.getImage())
+                .discount(roomType.getDiscount())
+                .address(roomType.getAccommodation().getAddress())
+                .build());
     }
 
     private UserAuthProvider getUserAuthProvider(String providerId) {
