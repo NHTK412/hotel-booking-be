@@ -17,6 +17,7 @@ import com.example.hotelbooking.dto.roomtype.RoomTypeRequestDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
 import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.exception.customer.AccessDeniedException;
+import com.example.hotelbooking.exception.customer.ConflictException;
 import com.example.hotelbooking.exception.customer.NotFoundException;
 import com.example.hotelbooking.model.AccommodationStaff;
 import com.example.hotelbooking.model.Accommodations;
@@ -284,24 +285,78 @@ public class RoomTypeService {
         roomType.getRooms().forEach((e) -> {
             if (roomIds.contains(e.getRoomId())) {
                 e.setIsDeleted(true);
-                // e.setStatus(StatusEnum.INACTIVE);
             }
         });
 
         roomTypeRepository.save(roomType);
-        // return getRoomsByRoomType(roomTypeId);
+
         return roomType.getRooms().stream().map(room -> {
-            // RoomSummaryDTO dto = new RoomSummaryDTO();
-            // dto.setRoomId(room.getRoomId());
-            // dto.setRoomNumber(room.getName());
-            // dto.setIsDeleted(room.getIsDeleted());
-            // return dto;
             return RoomSummaryDTO.builder()
                     .roomId(room.getRoomId())
                     .roomNumber(room.getName())
                     .isDeleted(room.getIsDeleted())
                     .build();
         }).toList();
+    }
+
+    // @Transactional
+    // public List<RoomSummaryDTO> createMultipleRoomsToRoomType(
+    // String providerId,
+    // Long roomTypeId,
+    // List<String> roomNumbers) {
+    // UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+    // RoomTypes roomType = getRoomType(roomTypeId);
+
+    // ensureHostHasAccommodation(userAuthProvider,
+    // roomType.getAccommodation().getAccommodationId());
+
+    // List<Rooms> existingRooms = roomNumbers.stream().map((r) -> {
+    // Rooms room = new Rooms();
+    // room.setName(r);
+    // room.setRoomType(roomType);
+    // room.setStatus(StatusEnum.ACTIVE);
+    // return room;
+    // }).toList();
+    // roomType.getRooms().addAll(existingRooms);
+
+    // roomTypeRepository.save(roomType);
+    // return getRoomsByRoomType(roomTypeId);
+    // }
+
+    @Transactional
+    public RoomSummaryDTO updateStatusRoom(String providerId, Long roomTypeId, Long roomIds, StatusEnum status) {
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        RoomTypes roomType = getRoomType(roomTypeId);
+
+        ensureHostHasAccommodation(userAuthProvider, roomType.getAccommodation().getAccommodationId());
+
+        Rooms room = roomType.getRooms().stream()
+                .filter(r -> r.getRoomId().equals(roomIds))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Room not found with id: " + roomIds));
+
+        StatusEnum currentState = room.getStatus();
+
+        room.setStatus(status);
+
+        // if (currentState == StatusEnum.ACTIVE && status == StatusEnum.INACTIVE) {
+        // room.setStatus(StatusEnum.INACTIVE);
+        // } else if (currentState == StatusEnum.INACTIVE && status ==
+        // StatusEnum.ACTIVE) {
+        // room.setStatus(StatusEnum.ACTIVE);
+        // } else if {
+        // throw new ConflictException("Invalid status transition for room with id: " +
+        // roomIds);
+        // }
+
+        roomTypeRepository.save(roomType);
+
+        return RoomSummaryDTO.builder()
+                .roomId(room.getRoomId())
+                .roomNumber(room.getName())
+                .status(room.getStatus())
+                .isDeleted(room.getIsDeleted())
+                .build();
     }
 
     public List<RoomSummaryDTO> getRoomsByRoomType(Long roomTypeId) {
@@ -318,6 +373,7 @@ public class RoomTypeService {
                     .roomId(room.getRoomId())
                     .roomNumber(room.getName())
                     .isDeleted(room.getIsDeleted())
+                    .status(room.getStatus())
                     .build();
         }).toList();
     }

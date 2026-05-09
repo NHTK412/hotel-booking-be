@@ -23,6 +23,7 @@ import com.example.hotelbooking.dto.room.RoomSummaryDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeDetailDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeRequestDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.security.CustomerUserDetails;
 import com.example.hotelbooking.service.RoomTypeService;
 import com.example.hotelbooking.util.ApiResponse;
@@ -238,6 +239,41 @@ public class RoomTypeController {
                                 "Rooms deleted from room type successfully",
                                 deletedRooms);
 
+                return ResponseEntity.ok(response);
+        }
+
+        // @PostMapping("/{roomTypeId}/rooms/multiple")
+        // public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>>
+        // createMultipleRoomsToRoomType(
+        // @PathVariable Long roomTypeId,
+        // @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+        // @RequestBody List<RoomRequestDTO> roomRequestDTOs) {
+        // List<RoomSummaryDTO> addedRooms =
+        // roomTypeService.createMultipleRoomsToRoomType(
+        // customerUserDetails.getProviderId(),
+        // roomTypeId,
+        // roomRequestDTOs);
+        // ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
+        // "Multiple rooms added to room type successfully",
+        // addedRooms);
+        // return ResponseEntity.ok(response);
+        // }
+
+        @PatchMapping("/{roomTypeId}/rooms/{roomId}")
+        public ResponseEntity<ApiResponse<RoomSummaryDTO>> updateRoomStatus(
+                        @PathVariable Long roomTypeId,
+                        @PathVariable Long roomId,
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @RequestParam StatusEnum status) {
+                RoomSummaryDTO updatedRoom = roomTypeService.updateStatusRoom(
+                                customerUserDetails.getProviderId(),
+                                roomTypeId,
+                                roomId,
+                                status);
+
+                ApiResponse<RoomSummaryDTO> response = new ApiResponse<>(true,
+                                "Room status updated successfully",
+                                updatedRoom);
                 return ResponseEntity.ok(response);
         }
 

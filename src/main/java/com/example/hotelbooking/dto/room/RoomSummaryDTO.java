@@ -1,5 +1,7 @@
 package com.example.hotelbooking.dto.room;
 
+import com.example.hotelbooking.enums.StatusEnum;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,4 +16,6 @@ public class RoomSummaryDTO {
     private String roomNumber;
 
     private Boolean isDeleted;
+
+    private StatusEnum status;
 }
