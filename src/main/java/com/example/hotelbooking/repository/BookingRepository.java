@@ -1,5 +1,6 @@
 package com.example.hotelbooking.repository;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.hotelbooking.dto.booking.BookingReportMonthDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
 import com.example.hotelbooking.model.Bookings;
 
@@ -125,5 +127,26 @@ public interface BookingRepository extends JpaRepository<Bookings, Long> {
         List<Bookings> findByStatusAndExpiredAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
 
         List<Bookings> findByStatusAndCheckInAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
+        @Query(nativeQuery = true, value = """
+                        SELECT MONTH(check_in_at) as month, COUNT(*) as totalBookings
+                        FROM
+                                bookings
+                                INNER JOIN rooms ON bookings.room_id = rooms.room_id
+                                INNER JOIN room_types ON rooms.roomtype_id = room_types.roomtype_id
+                                INNER JOIN accommodations ON accommodations.accommodation_id = room_types.accommodation_id
+                        WHERE
+                                check_in_at >= :startDateTime
+                                AND check_in_at < :endDateTime
+                                AND bookings.status = "CHECKED_OUT"
+                                AND accommodations.accommodation_id = :accommodationId
+                        GROUP BY
+                                month
+                        ORDER BY month;
+                                                                        """)
+        List<BookingReportMonthDTO> countBookingsByStatusForAccommodation(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("startDateTime") Date startDateTime,
+                        @Param("endDateTime") Date endDateTime);
 
 }

@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.booking.BookingDetailDTO;
+import com.example.hotelbooking.dto.booking.BookingReportMonthDTO;
 import com.example.hotelbooking.dto.booking.BookingRequestDTO;
 import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -71,7 +73,7 @@ public class BookingController {
 
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/accommodation/{accommodationId}")
-        public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingByAccommodationId(
+        public ResponseEntity<ApiResponse<Page<BookingSummaryDTO>>> getBookingByAccommodationId(
                         @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
                         @PathVariable Long accommodationId,
                         @RequestParam(defaultValue = "0") int page,
@@ -79,11 +81,11 @@ public class BookingController {
 
                 String providerId = customerUserDetails.getProviderId();
 
-                List<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingByAccommodationId(providerId,
+                Page<BookingSummaryDTO> bookingSummaryDTO = bookingService.getBookingByAccommodationId(providerId,
                                 accommodationId, page,
                                 size);
 
-                ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
+                ApiResponse<Page<BookingSummaryDTO>> response = new ApiResponse<>(true,
                                 "Booking retrieved successfully",
                                 bookingSummaryDTO);
 
@@ -471,12 +473,36 @@ public class BookingController {
 
         // @GetMapping("/notify")
         // public ResponseEntity<ApiResponse<String>> sendTestNotification(
-        //                 @AuthenticationPrincipal CustomerUserDetails customerUserDetails)
-        //                 throws FirebaseMessagingException {
-        //         bookingService.notificationForTodayCheckIns();
-        //         ApiResponse<String> response = new ApiResponse<>(true, "Test notification sent successfully",
-        //                         null);
-        //         return ResponseEntity.ok(response);
+        // @AuthenticationPrincipal CustomerUserDetails customerUserDetails)
+        // throws FirebaseMessagingException {
+        // bookingService.notificationForTodayCheckIns();
+        // ApiResponse<String> response = new ApiResponse<>(true, "Test notification
+        // sent successfully",
+        // null);
+        // return ResponseEntity.ok(response);
         // }
+
+        // Endpoint thông kê số lượng khách theo tháng trong năm
+        @PreAuthorize("hasRole('HOST')")
+        @GetMapping("/host/{accommodationId}/monthly-report")
+        public ResponseEntity<ApiResponse<List<BookingReportMonthDTO>>> getMonthlyBookingReport(
+                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @PathVariable Long accommodationId,
+                        @RequestParam int year) {
+
+                String providerId = customerUserDetails.getProviderId();
+
+                List<BookingReportMonthDTO> monthlyReport = bookingService.getMonthlyBookingReport(
+                                providerId,
+                                accommodationId,
+                                year);
+
+                ApiResponse<List<BookingReportMonthDTO>> response = new ApiResponse<>(
+                                true,
+                                "Monthly booking report retrieved successfully",
+                                monthlyReport);
+
+                return ResponseEntity.ok(response);
+        }
 
 }

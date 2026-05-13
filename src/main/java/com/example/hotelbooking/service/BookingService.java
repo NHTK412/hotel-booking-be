@@ -1,5 +1,6 @@
 package com.example.hotelbooking.service;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.booking.BookingDetailDTO;
+import com.example.hotelbooking.dto.booking.BookingReportMonthDTO;
 import com.example.hotelbooking.dto.booking.BookingRequestDTO;
 import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
@@ -176,7 +178,7 @@ public class BookingService {
         }
 
         @Transactional
-        public List<BookingSummaryDTO> getBookingByAccommodationId(String providerId, Long accommodationId, int page,
+        public Page<BookingSummaryDTO> getBookingByAccommodationId(String providerId, Long accommodationId, int page,
                         int size) {
 
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
@@ -196,7 +198,7 @@ public class BookingService {
                 Page<Bookings> bookingsPage = bookingRepository
                                 .findByRoom_RoomType_Accommodation_AccommodationId(accommodationId, pageable);
 
-                List<BookingSummaryDTO> bookingSummaryDTOs = bookingsPage.stream()
+                Page<BookingSummaryDTO> bookingSummaryDTOs = bookingsPage
                                 .map(booking -> BookingSummaryDTO.builder()
                                                 .bookingId(booking.getBookingId())
                                                 .customerName(booking.getCustomerName())
@@ -204,8 +206,8 @@ public class BookingService {
                                                 .customerPhone(booking.getCustomerPhone())
                                                 .status(booking.getStatus().name())
                                                 .finalPrice(booking.getFinalPrice())
-                                                .build())
-                                .toList();
+                                                .build());
+                // .toList();
 
                 return bookingSummaryDTOs;
         }
@@ -794,6 +796,28 @@ public class BookingService {
 
                         }
                 }
+        }
+
+        public List<BookingReportMonthDTO> getMonthlyBookingReport(
+                        String providerId, Long accommodationId, int year) {
+
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+
+                if (!staffAccommodations.contains(accommodationId)) {
+                        throw new AccessDeniedException("Accommodation not found for the provider");
+                }
+
+                List<BookingReportMonthDTO> reponse = bookingRepository.countBookingsByStatusForAccommodation(
+                                accommodationId,
+                                Date.valueOf(LocalDate.of(year, 1, 1)), Date.valueOf(LocalDate.of(year, 12, 31)));
+
+                return reponse;
+
         }
 
 }
