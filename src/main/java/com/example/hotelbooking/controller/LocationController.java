@@ -1,15 +1,13 @@
 package com.example.hotelbooking.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.function.EntityResponse;
 
 import com.example.hotelbooking.dto.location.LocationResponseDTO;
 import com.example.hotelbooking.service.LocationService;
@@ -18,21 +16,22 @@ import com.github.davidmoten.geo.GeoHash;
 
 @RestController
 @RequestMapping("/locations")
-class LocationController {
+public class LocationController {
 
-    final LocationService locationService;
+    private final LocationService locationService;
 
     public LocationController(LocationService locationService) {
         this.locationService = locationService;
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<LocationResponseDTO>>> searchLocation(@RequestParam String keyword,
+    public ResponseEntity<ApiResponse<List<LocationResponseDTO>>> searchLocation(
+            @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         List<LocationResponseDTO> locations = locationService.getLocationByKeyword(keyword, page, size);
 
-        final ApiResponse<List<LocationResponseDTO>> response = new ApiResponse<List<LocationResponseDTO>>(
+        ApiResponse<List<LocationResponseDTO>> response = new ApiResponse<>(
                 true,
                 "Search location successfully",
                 locations);
@@ -50,40 +49,34 @@ class LocationController {
         LocationResponseDTO location = locationService.getCurrentLocation(subAdministrativeArea, administrativeArea,
                 latitude, longitude);
 
-        final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
+        ApiResponse<LocationResponseDTO> response = new ApiResponse<>(
                 true,
                 "Get current location successfully",
                 location);
 
         return ResponseEntity.ok(response);
-
     }
 
-    // Không cần login
     @GetMapping("/calculator")
     public ResponseEntity<ApiResponse<String>> calculateDistanceAndDuration(
             @RequestParam Double lat,
             @RequestParam Double lng) {
 
         String prefix = GeoHash.encodeHash(lat, lng, 12);
-
         return ResponseEntity.ok(new ApiResponse<>(true, "Calculate distance and duration successfully", prefix));
-
     }
 
     @GetMapping("/{locationId}")
     public ResponseEntity<ApiResponse<LocationResponseDTO>> getLocationById(
-            @RequestParam Long locationId) {
+            @PathVariable Long locationId) {
 
         LocationResponseDTO location = locationService.getLocationById(locationId);
 
-        final ApiResponse<LocationResponseDTO> response = new ApiResponse<LocationResponseDTO>(
+        ApiResponse<LocationResponseDTO> response = new ApiResponse<>(
                 true,
                 "Get location by id successfully",
                 location);
 
         return ResponseEntity.ok(response);
-
     }
-
 }

@@ -3,8 +3,6 @@ package com.example.hotelbooking.controller;
 import java.time.LocalDate;
 import java.util.List;
 
-// import org.hibernate.query.Page;
-// org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +12,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.room.RoomRequestDTO;
@@ -22,29 +24,23 @@ import com.example.hotelbooking.dto.room.RoomSummaryDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeDetailDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeRequestDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
-import com.example.hotelbooking.security.CustomerUserDetails;
+import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.RoomTypeService;
 import com.example.hotelbooking.util.ApiResponse;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @RequestMapping("/room-types")
 public class RoomTypeController {
 
-        final RoomTypeService roomTypeService;
+        private final RoomTypeService roomTypeService;
 
         public RoomTypeController(RoomTypeService roomTypeService) {
                 this.roomTypeService = roomTypeService;
         }
 
-        // Public endpoints
         @GetMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> getRoomTypeById(@PathVariable Long roomTypeId) {
-                RoomTypeDetailDTO updatedRoomType = roomTypeService
-                                .getRoomTypeById(roomTypeId);
+                RoomTypeDetailDTO updatedRoomType = roomTypeService.getRoomTypeById(roomTypeId);
 
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
                                 "Room type retrieved successfully",
@@ -67,8 +63,6 @@ public class RoomTypeController {
 
         @GetMapping("/search")
         public ResponseEntity<ApiResponse<List<RoomTypeSummaryDTO>>> getAllRoomTypes(
-                        // @RequestParam(required = false) String district,
-                        // @RequestParam(required = false) String city,
                         @RequestParam(required = false) Long locationId,
                         @RequestParam(required = false) String checkInDate,
                         @RequestParam(required = false) String checkOutDate,
@@ -83,8 +77,6 @@ public class RoomTypeController {
                 LocalDate parsedCheckOutDate = parseDateOrNull(checkOutDate);
 
                 List<RoomTypeSummaryDTO> roomTypes = roomTypeService.getAllRoomTypes(
-                                // district,
-                                // city,
                                 locationId,
                                 parsedCheckInDate,
                                 parsedCheckOutDate,
@@ -122,11 +114,10 @@ public class RoomTypeController {
                 return ResponseEntity.ok(response);
         }
 
-        // Host room type management
         @PreAuthorize("hasAnyRole('HOST')")
         @PostMapping
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> createRoomType(
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
                 RoomTypeDetailDTO createdRoomType = roomTypeService.createRoomType(
                                 customerUserDetails.getProviderId(),
@@ -143,7 +134,7 @@ public class RoomTypeController {
         @PutMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> updateRoomType(
                         @PathVariable Long roomTypeId,
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
                 RoomTypeDetailDTO updatedRoomType = roomTypeService
                                 .updateRoomType(customerUserDetails.getProviderId(), roomTypeId, roomTypeRequestDTO);
@@ -159,7 +150,7 @@ public class RoomTypeController {
         @PatchMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> patchRoomType(
                         @PathVariable Long roomTypeId,
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestParam Double price,
                         @RequestParam Double discount) {
                 RoomTypeDetailDTO updatedRoomType = roomTypeService
@@ -175,7 +166,7 @@ public class RoomTypeController {
         @DeleteMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> deleteRoomType(
                         @PathVariable Long roomTypeId,
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails) {
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails) {
                 RoomTypeDetailDTO deletedRoomType = roomTypeService
                                 .deleteRoomType(customerUserDetails.getProviderId(), roomTypeId);
 
@@ -185,12 +176,11 @@ public class RoomTypeController {
                 return ResponseEntity.ok(response);
         }
 
-        // Host room management
         @PreAuthorize("hasAnyRole('HOST')")
         @PostMapping("/{roomTypeId}/rooms")
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> addRoomsToRoomType(
                         @PathVariable Long roomTypeId,
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestBody RoomRequestDTO roomRequestDTO) {
                 List<RoomSummaryDTO> addedRooms = roomTypeService.addRoomsToRoomType(
                                 customerUserDetails.getProviderId(),
@@ -207,7 +197,7 @@ public class RoomTypeController {
         @DeleteMapping("/{roomTypeId}/rooms")
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> deleteRoomsFromRoomType(
                         @PathVariable Long roomTypeId,
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestBody List<Long> roomIds) {
                 List<RoomSummaryDTO> deletedRooms = roomTypeService.deleteRoomsFromRoomType(
                                 customerUserDetails.getProviderId(),
@@ -217,8 +207,6 @@ public class RoomTypeController {
                 ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
                                 "Rooms deleted from room type successfully",
                                 deletedRooms);
-
                 return ResponseEntity.ok(response);
         }
-
 }

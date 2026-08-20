@@ -10,60 +10,57 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.hotelbooking.enums.AccommodationTypeEnum;
-import com.example.hotelbooking.model.Accommodations;
+import com.example.hotelbooking.model.Accommodation;
 
 @Repository
-public interface AccommodationRepository extends JpaRepository<Accommodations, Long> {
+public interface AccommodationRepository extends JpaRepository<Accommodation, Long> {
 
-        Page<Accommodations> findByIsDeletedFalse(Pageable pageable);
+        Page<Accommodation> findByIsDeletedFalse(Pageable pageable);
 
-        Page<Accommodations> findByIsDeletedFalseAndType(Pageable pageable,
-                        com.example.hotelbooking.enums.AccommodationTypeEnum type);
+        Page<Accommodation> findByIsDeletedFalseAndType(Pageable pageable, AccommodationTypeEnum type);
 
-        Page<Accommodations> findByIsDeletedFalseAndFavoritedByUsers_id(
-                        Pageable pageable,
-                        Long id);
+        Page<Accommodation> findByIsDeletedFalseAndFavoritedByUsers_id(Pageable pageable, Long id);
 
         @Query("""
-                        SELECT a FROM Accommodations a WHERE a.geohash LIKE :prefix%
+                        SELECT a FROM Accommodation a WHERE a.geohash LIKE :prefix%
                         """)
-        List<Accommodations> findNearby(@Param("prefix") String prefix);
+        List<Accommodation> findNearby(@Param("prefix") String prefix);
 
         @Query("""
-                        SELECT a FROM Accommodations a WHERE a.geohash LIKE :prefix%  AND a.type = :type
+                        SELECT a FROM Accommodation a WHERE a.geohash LIKE :prefix% AND a.type = :type
                         """)
-        List<Accommodations> findNearbyWithType(@Param("prefix") String prefix, @Param("type") String type);
+        List<Accommodation> findNearbyWithType(@Param("prefix") String prefix, @Param("type") String type);
 
         @Query("""
-                        SELECT a FROM Accommodations a WHERE a.isDeleted = false AND
+                        SELECT a FROM Accommodation a WHERE a.isDeleted = false AND
                         (LOWER(a.accommodationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                                 LOWER(a.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
                                 """)
-        Page<Accommodations> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+        Page<Accommodation> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
         @Query("""
                         SELECT a
-                        FROM Accommodations a
+                        FROM Accommodation a
                         WHERE a.isDeleted = false
                         AND (:locationId IS NULL OR a.location.id = :locationId)
                         AND (:type IS NULL OR a.type = :type)
                                 """)
-        Page<Accommodations> findByIsDeletedFalseAndLocationId(Pageable pageable, Long locationId,
+        Page<Accommodation> findByIsDeletedFalseAndLocationId(Pageable pageable, Long locationId,
                         AccommodationTypeEnum type);
 
         @Query("""
                         SELECT a
-                        FROM Accommodations a
+                        FROM Accommodation a
                         WHERE a.isDeleted = false
                         AND a.location.id = :locationId
                         AND a.type = :type
                         ORDER BY COALESCE(
                                 (SELECT AVG(CAST(rt.star AS double))
-                                        FROM RoomTypes rt
+                                        FROM RoomType rt
                                         WHERE rt.accommodation.accommodationId = a.accommodationId
                                         AND rt.star IS NOT NULL),
                                 0) ASC
                                 """)
-        Page<Accommodations> findByLocationIdAndTypeSortedByStar(@Param("locationId") Long locationId,
+        Page<Accommodation> findByLocationIdAndTypeSortedByStar(@Param("locationId") Long locationId,
                         @Param("type") AccommodationTypeEnum type, Pageable pageable);
 }

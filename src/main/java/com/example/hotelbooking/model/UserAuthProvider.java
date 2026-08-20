@@ -23,7 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class UserAuthProvider extends Base {
+public class UserAuthProvider extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,9 +41,5 @@ public class UserAuthProvider extends Base {
 
     @OneToOne
     @JoinColumn(name = "userId")
-    private Users user;
-
-    // @Column(name = "accessToken")
-    // private String accessToken;
-
+    private User user;
 }
