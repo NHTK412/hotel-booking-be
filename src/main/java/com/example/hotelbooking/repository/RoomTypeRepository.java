@@ -28,7 +28,7 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, Long> {
                         SELECT 1
                         FROM Booking b
                         WHERE b.room = r
-                            AND b.status != 'CANCELLED'
+                            AND b.status != com.example.hotelbooking.enums.BookingStatusEnum.CANCELED
                             AND NOT (
                                 b.checkOutAt <= :checkInAt
                                 OR b.checkInAt >= :checkOutAt

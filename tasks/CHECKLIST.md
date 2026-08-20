@@ -8,21 +8,21 @@
 
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
-| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ⏳ Sẵn sàng | `0 / 5` |
+| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `1 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`0 / 15` (0%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`1 / 15` (6.7%)** |
 
 ---
 
 ## 🔴 Phase 1: Sửa Các Bug Logic & Query Nghiêm Trọng (Critical Bugs)
 
-- [ ] **[BUG-01]** Sửa lỗi chính tả enum `'CANCELLED'` (2 chữ L) trong `RoomRepository` và `RoomTypeRepository`.
+- [x] **[BUG-01]** Sửa lỗi chính tả enum `'CANCELLED'` (2 chữ L) trong `RoomRepository` và `RoomTypeRepository`.
   - **Priority**: 🔴 `CRITICAL`
   - **Estimate**: `15 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-01 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-01-sai-ch%C3%ADnh-t%E1%BA%A3-enum-cancelled-trong-query-khi%E1%BA%BFn-ph%C3%B2ng-%C4%91%C3%A3-h%E1%BB%A7y-kh%C3%B4ng-th%E1%BB%83-%C4%91%E1%BA%B7t-l%E1%BA%A1i)
 
 - [ ] **[BUG-02]** Sửa lỗi thuộc tính `a.location.id` thành `a.location.locationId` trong `AccommodationRepository`.
