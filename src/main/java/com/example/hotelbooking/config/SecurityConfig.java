@@ -65,8 +65,16 @@ public class SecurityConfig {
                                                 "/swagger-ui.html",
                                                 "/v3/api-docs/**",
                                                 "/images/**",
-                                                "/locations/calculator",
+                                                "/locations/**",
+                                                "/room-types/**",
+                                                "/accommodations/search",
+                                                "/accommodations/nearby",
                                                 "/zalopay/callback")
+                                .permitAll()
+                                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                                "/accommodations",
+                                                "/accommodations/{accommodationId}",
+                                                "/reviews")
                                 .permitAll()
                                 .anyRequest().authenticated());
 

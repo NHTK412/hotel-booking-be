@@ -8,11 +8,11 @@
 
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
-| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `2 / 5` |
+| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `3 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`2 / 15` (13.3%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`3 / 15` (20.0%)** |
 
 ---
 
@@ -32,11 +32,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-02 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-02-sai-t%C3%AAn-thu%E1%BB%99c-t%C3%ADnh-jpql-alocationid-g%C3%A2y-crash-runtime)
 
-- [ ] **[BUG-03]** Mở quyền truy cập công khai (`permitAll`) cho các API tra cứu công cộng trong `SecurityConfig`.
+- [x] **[BUG-03]** Mở quyền truy cập công khai (`permitAll`) cho các API tra cứu công cộng trong `SecurityConfig`.
   - **Priority**: 🔴 `HIGH`
   - **Estimate**: `15 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-03 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-03-ch%E1%BA%B7n-quy%E1%BB%81n-kh%C3%A1ch-v%C3%A3ng-lai-truy-c%E1%BA%ADp-c%C3%A1c-endpoint-c%C3%B4ng-khai-trong-securityconfig)
 
 - [ ] **[BUG-04]** Chuẩn hóa logic tính trung bình số sao đánh giá trong `ReviewService`.

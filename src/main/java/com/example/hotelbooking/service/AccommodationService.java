@@ -143,18 +143,19 @@ public class AccommodationService {
         }
 
         public AccommodationDetailDTO getAccommodationById(String providerId, Long accommodationId) {
-
-                UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
-                                .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
-
-                User user = authProvider.getUser();
+                User user = null;
+                if (providerId != null && !providerId.isBlank()) {
+                        UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                        .orElse(null);
+                        if (authProvider != null) {
+                                user = authProvider.getUser();
+                        }
+                }
 
                 Accommodation accommodation = accommodationRepository.findById(accommodationId)
                                 .orElseThrow(() -> new NotFoundException("Accommodation not found"));
 
-                return (user != null)
-                                ? convertToDetailDTO(accommodation, user)
-                                : convertToDetailDTO(accommodation);
+                return convertToDetailDTO(accommodation, user);
         }
 
         public AccommodationDetailDTO createAccommodation(AccommodationRequestDTO accommodationRequestDTO) {

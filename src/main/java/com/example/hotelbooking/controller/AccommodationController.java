@@ -34,7 +34,6 @@ public class AccommodationController {
                 this.accommodationService = accommodationService;
         }
 
-        @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
         @GetMapping
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(
                         @RequestParam(defaultValue = "0") Integer page,
@@ -53,13 +52,12 @@ public class AccommodationController {
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
         @GetMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> getAccommodationById(
                         @AuthenticationPrincipal CustomUserDetails userDetails,
                         @PathVariable Long accommodationId) {
 
-                final String providerId = userDetails.getUsername();
+                final String providerId = userDetails != null ? userDetails.getUsername() : null;
 
                 AccommodationDetailDTO accommodationDetailDTO = accommodationService
                                 .getAccommodationById(providerId, accommodationId);
@@ -155,10 +153,8 @@ public class AccommodationController {
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('CUSTOMER')")
         @GetMapping("/nearby")
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getNearbyAccommodations(
-                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestParam Double latitude,
                         @RequestParam Double longitude,
                         @RequestParam(required = false, defaultValue = "5") Integer precision,
