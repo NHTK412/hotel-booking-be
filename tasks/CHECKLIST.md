@@ -8,11 +8,11 @@
 
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
-| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `3 / 5` |
+| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `4 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`3 / 15` (20.0%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`4 / 15` (26.7%)** |
 
 ---
 
@@ -39,11 +39,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-03 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-03-ch%E1%BA%B7n-quy%E1%BB%81n-kh%C3%A1ch-v%C3%A3ng-lai-truy-c%E1%BA%ADp-c%C3%A1c-endpoint-c%C3%B4ng-khai-trong-securityconfig)
 
-- [ ] **[BUG-04]** Chuẩn hóa logic tính trung bình số sao đánh giá trong `ReviewService`.
+- [x] **[BUG-04]** Chuẩn hóa logic tính trung bình số sao đánh giá trong `ReviewService`.
   - **Priority**: 🟡 `MEDIUM`
   - **Estimate**: `20 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-04 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-04-logic-t%C3%ADnh-%C4%91i%E1%BB%83m-%C4%91%C3%A1nh-gi%C3%A1-trung-b%C3%ACnh-sai-trong-reviewservice)
 
 - [ ] **[BUG-05]** Chuẩn hóa cơ chế OAuth Login (lưu Google/Facebook `sub` thay vì `idToken` tạm thời).

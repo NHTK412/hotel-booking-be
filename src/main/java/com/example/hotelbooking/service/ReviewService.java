@@ -19,6 +19,7 @@ import com.example.hotelbooking.model.RoomType;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.repository.BookingRepository;
 import com.example.hotelbooking.repository.ReviewRepository;
+import com.example.hotelbooking.repository.RoomTypeRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 
 import jakarta.transaction.Transactional;
@@ -31,6 +32,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserAuthProviderRepository userAuthProviderRepository;
     private final BookingRepository bookingRepository;
+    private final RoomTypeRepository roomTypeRepository;
 
     @Transactional
     public ReviewSummaryDTO createReview(String providerId, ReviewRequestDTO reviewRequestDTO) {
@@ -49,7 +51,7 @@ public class ReviewService {
             throw new ConflictException("Cannot review a booking that is not checked out");
         }
 
-        if (reviewRepository.existsById(reviewRequestDTO.getBookingId())) {
+        if (reviewRepository.existsByBooking_BookingId(reviewRequestDTO.getBookingId())) {
             throw new ConflictException("Booking already has a review");
         }
 
@@ -66,13 +68,9 @@ public class ReviewService {
         bookingRepository.save(booking);
 
         RoomType roomType = booking.getRoom().getRoomType();
-        int currentAvgRating = roomType.getStar() != null ? roomType.getStar() : 0;
-        int currentReviewCount = roomType.getReviews() != null ? roomType.getReviews().size() : 1;
-
-        double newAvgRating = (currentAvgRating * (currentReviewCount - 1) + savedReview.getRating())
-                / (currentReviewCount == 0 ? 1 : currentReviewCount);
-                
-        roomType.setStar((int) Math.round(newAvgRating));
+        Double avgRating = reviewRepository.calculateAverageRatingByRoomTypeId(roomType.getRoomtypeId());
+        roomType.setStar((int) Math.round(avgRating));
+        roomTypeRepository.save(roomType);
 
         return mapToReviewSummaryDTO(savedReview);
     }
