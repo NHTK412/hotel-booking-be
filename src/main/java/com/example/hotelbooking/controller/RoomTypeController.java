@@ -28,6 +28,10 @@ import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.RoomTypeService;
 import com.example.hotelbooking.util.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "3. Loại Phòng & Quản Lý Phòng (Room Types)", description = "Các API tìm kiếm phòng trống theo ngày, thông tin loại phòng, giá cả, chiết khấu và quản lý phòng vật lý")
 @RestController
 @RequestMapping("/room-types")
 public class RoomTypeController {
@@ -38,29 +42,32 @@ public class RoomTypeController {
                 this.roomTypeService = roomTypeService;
         }
 
+        @Operation(summary = "Xem chi tiết loại phòng (Công khai)", description = "Lấy thông tin đầy đủ của loại phòng bao gồm giá, sức chứa, số giường và các tiện nghi phòng")
         @GetMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> getRoomTypeById(@PathVariable Long roomTypeId) {
                 RoomTypeDetailDTO updatedRoomType = roomTypeService.getRoomTypeById(roomTypeId);
 
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
-                                "Room type retrieved successfully",
+                                "Lấy thông tin loại phòng thành công",
                                 updatedRoomType);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lấy danh sách các phòng vật lý thuộc loại phòng (Công khai)", description = "Xem danh sách các mã phòng thực tế thuộc về loại phòng này")
         @GetMapping("/{roomTypeId}/rooms")
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> getRoomsByRoomType(
                         @PathVariable Long roomTypeId) {
                 List<RoomSummaryDTO> rooms = roomTypeService.getRoomsByRoomType(roomTypeId);
 
                 ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
-                                "Rooms retrieved successfully",
+                                "Lấy danh sách phòng thành công",
                                 rooms);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Tìm kiếm phòng còn trống theo ngày (Công khai)", description = "Tìm kiếm loại phòng theo địa điểm, ngày Check-in/Check-out, số lượng khách và số phòng ngủ")
         @GetMapping("/search")
         public ResponseEntity<ApiResponse<List<RoomTypeSummaryDTO>>> getAllRoomTypes(
                         @RequestParam(required = false) Long locationId,
@@ -85,7 +92,7 @@ public class RoomTypeController {
                                 pageable);
 
                 ApiResponse<List<RoomTypeSummaryDTO>> response = new ApiResponse<>(true,
-                                "Room types retrieved successfully",
+                                "Tìm kiếm loại phòng thành công",
                                 roomTypes);
 
                 return ResponseEntity.ok(response);
@@ -95,6 +102,7 @@ public class RoomTypeController {
                 return value == null || value.isBlank() ? null : LocalDate.parse(value);
         }
 
+        @Operation(summary = "Lấy danh sách loại phòng của một khách sạn (Công khai)", description = "Xem toàn bộ các loại phòng mà khách sạn đang cung cấp")
         @GetMapping("/accommodations/{accommodationId}")
         public ResponseEntity<ApiResponse<List<RoomTypeSummaryDTO>>> getRoomTypesByAccommodation(
                         @PathVariable Long accommodationId,
@@ -108,12 +116,13 @@ public class RoomTypeController {
                                 pageable);
 
                 ApiResponse<List<RoomTypeSummaryDTO>> response = new ApiResponse<>(true,
-                                "Room types retrieved successfully",
+                                "Lấy danh sách loại phòng thành công",
                                 roomTypes);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Tạo loại phòng mới (Chủ khách sạn - Host)", description = "Thêm mới một danh mục loại phòng kèm giá, số người tối đa và tiện ích")
         @PreAuthorize("hasAnyRole('HOST')")
         @PostMapping
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> createRoomType(
@@ -124,12 +133,13 @@ public class RoomTypeController {
                                 roomTypeRequestDTO);
 
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
-                                "Room type created successfully",
+                                "Tạo loại phòng thành công",
                                 createdRoomType);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Cập nhật loại phòng (Chủ khách sạn - Host)", description = "Chỉnh sửa thông số, tiện nghi và hình ảnh của loại phòng")
         @PreAuthorize("hasAnyRole('HOST')")
         @PutMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> updateRoomType(
@@ -140,12 +150,13 @@ public class RoomTypeController {
                                 .updateRoomType(customerUserDetails.getProviderId(), roomTypeId, roomTypeRequestDTO);
 
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
-                                "Room type updated successfully",
+                                "Cập nhật loại phòng thành công",
                                 updatedRoomType);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Cập nhật nhanh Giá & Giảm giá (Host)", description = "Cập nhật giá niêm yết và tỷ lệ chiết khấu cho loại phòng")
         @PreAuthorize("hasAnyRole('HOST')")
         @PatchMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> patchRoomType(
@@ -156,12 +167,13 @@ public class RoomTypeController {
                 RoomTypeDetailDTO updatedRoomType = roomTypeService
                                 .patchRoomType(customerUserDetails.getProviderId(), roomTypeId, price, discount);
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
-                                "Room type patched successfully",
+                                "Cập nhật giá và chiết khấu thành công",
                                 updatedRoomType);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Xóa loại phòng (Chủ khách sạn - Host)", description = "Xóa loại phòng khỏi hệ thống")
         @PreAuthorize("hasAnyRole('HOST')")
         @DeleteMapping("/{roomTypeId}")
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> deleteRoomType(
@@ -171,11 +183,12 @@ public class RoomTypeController {
                                 .deleteRoomType(customerUserDetails.getProviderId(), roomTypeId);
 
                 ApiResponse<RoomTypeDetailDTO> response = new ApiResponse<>(true,
-                                "Room type deleted successfully",
+                                "Xóa loại phòng thành công",
                                 deletedRoomType);
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Thêm phòng vật lý vào loại phòng (Host)", description = "Khởi tạo các số phòng vật lý (Ví dụ: Phòng 101, 102...) gán vào loại phòng")
         @PreAuthorize("hasAnyRole('HOST')")
         @PostMapping("/{roomTypeId}/rooms")
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> addRoomsToRoomType(
@@ -188,11 +201,12 @@ public class RoomTypeController {
                                 roomRequestDTO);
 
                 ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
-                                "Rooms added to room type successfully",
+                                "Thêm phòng vật lý thành công",
                                 addedRooms);
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Xóa phòng vật lý (Host)", description = "Xóa danh sách các phòng theo ID phòng")
         @PreAuthorize("hasAnyRole('HOST')")
         @DeleteMapping("/{roomTypeId}/rooms")
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> deleteRoomsFromRoomType(
@@ -205,7 +219,7 @@ public class RoomTypeController {
                                 roomIds);
 
                 ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
-                                "Rooms deleted from room type successfully",
+                                "Xóa phòng vật lý thành công",
                                 deletedRooms);
                 return ResponseEntity.ok(response);
         }

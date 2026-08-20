@@ -14,6 +14,10 @@ import com.example.hotelbooking.service.LocationService;
 import com.example.hotelbooking.util.ApiResponse;
 import com.github.davidmoten.geo.GeoHash;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "6. Địa Điểm & Tọa Độ (Locations & Geocoding)", description = "Các API tìm kiếm địa điểm hành chính, xác định vị trí hiện tại và mã hóa tọa độ GeoHash")
 @RestController
 @RequestMapping("/locations")
 public class LocationController {
@@ -24,6 +28,7 @@ public class LocationController {
         this.locationService = locationService;
     }
 
+    @Operation(summary = "Tìm kiếm địa điểm theo từ khóa (Công khai)", description = "Tìm kiếm tỉnh, thành phố, quận, huyện theo từ khóa nhập vào")
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<LocationResponseDTO>>> searchLocation(
             @RequestParam String keyword,
@@ -33,12 +38,13 @@ public class LocationController {
 
         ApiResponse<List<LocationResponseDTO>> response = new ApiResponse<>(
                 true,
-                "Search location successfully",
+                "Tìm kiếm địa điểm thành công",
                 locations);
 
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Xác định địa điểm hiện tại (Công khai)", description = "Chuyển đổi tọa độ GPS hoặc tên quận/tỉnh thành bản ghi địa điểm chuẩn trong CSDL")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<LocationResponseDTO>> getCurrentLocation(
             @RequestParam(required = false) String subAdministrativeArea,
@@ -51,21 +57,23 @@ public class LocationController {
 
         ApiResponse<LocationResponseDTO> response = new ApiResponse<>(
                 true,
-                "Get current location successfully",
+                "Lấy địa điểm hiện tại thành công",
                 location);
 
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Tính toán mã GeoHash từ tọa độ (Công khai)", description = "Mã hóa cặp tọa độ Vĩ độ và Kinh độ thành chuỗi GeoHash 12 ký tự phục vụ tìm kiếm không gian")
     @GetMapping("/calculator")
     public ResponseEntity<ApiResponse<String>> calculateDistanceAndDuration(
             @RequestParam Double lat,
             @RequestParam Double lng) {
 
         String prefix = GeoHash.encodeHash(lat, lng, 12);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Calculate distance and duration successfully", prefix));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tính toán GeoHash thành công", prefix));
     }
 
+    @Operation(summary = "Xem chi tiết địa điểm theo ID (Công khai)", description = "Lấy thông tin chi tiết địa điểm bằng khóa chính locationId")
     @GetMapping("/{locationId}")
     public ResponseEntity<ApiResponse<LocationResponseDTO>> getLocationById(
             @PathVariable Long locationId) {
@@ -74,7 +82,7 @@ public class LocationController {
 
         ApiResponse<LocationResponseDTO> response = new ApiResponse<>(
                 true,
-                "Get location by id successfully",
+                "Lấy thông tin địa điểm thành công",
                 location);
 
         return ResponseEntity.ok(response);

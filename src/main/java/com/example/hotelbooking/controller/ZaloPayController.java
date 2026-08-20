@@ -17,9 +17,10 @@ import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.ZaloPayService;
 import com.example.hotelbooking.util.ApiResponse;
 
-/**
- * Controller xử lý các API liên quan đến thanh toán ZaloPay
- */
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "10. Cổng Thanh Toán ZaloPay (Payments)", description = "Các API tạo đơn hàng thanh toán qua ZaloPay Gateway và tiếp nhận Webhook Callback IPN từ ZaloPay")
 @RestController
 @RequestMapping("/zalopay")
 public class ZaloPayController {
@@ -30,6 +31,7 @@ public class ZaloPayController {
         this.zaloPayService = zaloPayService;
     }
 
+    @Operation(summary = "Tạo đơn hàng thanh toán ZaloPay (Khách hàng)", description = "Khởi tạo giao dịch thanh toán ZaloPay cho đơn đặt phòng và trả về đường link/app_trans_id để mở ứng dụng ZaloPay thanh toán")
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/create-order")
     public ResponseEntity<ApiResponse<ZaloPayResponseDTO>> createOrder(
@@ -37,17 +39,13 @@ public class ZaloPayController {
             @RequestBody CreateOrderRequest req) throws Exception {
 
         String username = userDetails.getUsername();
-        System.err.println("Username in ZaloPayController: " + username);
-
         ZaloPayResponseDTO res = zaloPayService.createOrder(username, req);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Create ZaloPay order successfully", res));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tạo đơn hàng ZaloPay thành công", res));
     }
 
+    @Operation(summary = "Tiếp nhận Webhook Callback từ ZaloPay (Công khai / Server-to-Server)", description = "Endpoint tiếp nhận thông báo kết quả thanh toán từ máy chủ ZaloPay (IPN), kiểm tra mã MAC chữ ký số và cập nhật trạng thái đơn đặt phòng sang PENDING/CHECKED_IN")
     @PostMapping("/callback")
     public String callback(@RequestBody Map<String, Object> cbdata) throws Exception {
-        System.out.println("=== ZALOPAY CALLBACK RECEIVED ===");
-        System.out.println("Callback data: " + cbdata);
-
         String dataStr = (String) cbdata.get("data");
         String reqMac = (String) cbdata.get("mac");
 

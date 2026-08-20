@@ -11,8 +11,8 @@
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
-| **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`5 / 15` (33.3%)** |
+| **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`6 / 15` (40%)** |
 
 ---
 
@@ -114,11 +114,11 @@
 
 ## 🔵 Phase 4: Tự Động Hóa, Tài Liệu & DevOps (CV Showcase)
 
-- [ ] **[TASK-13]** Cấu hình Swagger / OpenAPI 3.0 với Authorize Bearer JWT Header.
+- [x] **[TASK-13]** Cấu hình Swagger / OpenAPI 3.0 với Authorize Bearer JWT Header + Light/Dark mode switcher.
   - **Priority**: 🟡 `MEDIUM`
   - **Estimate**: `45 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-13 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-13-c%E1%BA%A5u-h%C3%ACnh-swagger--openapi-documentation)
 
 - [ ] **[TASK-14]** Viết Unit Test (JUnit 5 + Mockito) và Integration Test cho Booking & Auth Service.

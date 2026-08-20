@@ -24,6 +24,10 @@ import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.BookingService;
 import com.example.hotelbooking.util.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "4. Đặt Phòng & Báo Cáo Doanh Thu (Bookings & Revenue)", description = "Các API đặt phòng, quản lý trạng thái đơn đặt, hủy phòng và báo cáo thống kê doanh thu cho Host")
 @RestController
 @RequestMapping("/bookings")
 public class BookingController {
@@ -34,6 +38,7 @@ public class BookingController {
                 this.bookingService = bookingService;
         }
 
+        @Operation(summary = "Tạo đơn đặt phòng mới (Khách hàng)", description = "Khách hàng tạo đơn đặt phòng theo ngày Check-in/Check-out và thông tin liên hệ")
         @PostMapping
         public ResponseEntity<ApiResponse<BookingDetailDTO>> createBooking(
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
@@ -42,12 +47,13 @@ public class BookingController {
                 String username = customerUserDetails.getUsername();
                 BookingDetailDTO bookingDetailDTO = bookingService.createBooking(username, bookingRequestDTO);
 
-                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking created successfully",
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Đặt phòng thành công",
                                 bookingDetailDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Xem chi tiết đơn đặt phòng theo ID (Host & Khách hàng)", description = "Lấy thông tin chi tiết đơn đặt phòng bao gồm khách hàng, phòng đã đặt, giá tiền và trạng thái")
         @PreAuthorize("hasRole('HOST') or hasRole('CUSTOMER')")
         @GetMapping("/{bookingId}")
         public ResponseEntity<ApiResponse<BookingDetailDTO>> getBookingById(
@@ -57,12 +63,13 @@ public class BookingController {
                 final String providerId = customerUserDetails.getProviderId();
                 BookingDetailDTO bookingDetailDTO = bookingService.getBookingById(providerId, bookingId);
 
-                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking retrieved successfully",
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Lấy thông tin đặt phòng thành công",
                                 bookingDetailDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lấy danh sách đơn đặt theo Khách sạn (Chủ khách sạn - Host)", description = "Truy xuất danh sách tất cả các đơn đặt phòng của một khách sạn có phân trang")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/accommodation/{accommodationId}")
         public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingByAccommodationId(
@@ -76,12 +83,13 @@ public class BookingController {
                                 accommodationId, page, size);
 
                 ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
-                                "Booking retrieved successfully",
+                                "Lấy danh sách đơn đặt phòng thành công",
                                 bookingSummaryDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Cập nhật trạng thái đơn đặt phòng (Host)", description = "Host cập nhật trạng thái đơn (Ví dụ: CHECKED_IN, CHECKED_OUT, CANCELED)")
         @PreAuthorize("hasRole('HOST')")
         @PatchMapping("/{bookingId}/status")
         public ResponseEntity<ApiResponse<BookingDetailDTO>> updateBookingStatus(
@@ -92,12 +100,13 @@ public class BookingController {
                 String providerId = customerUserDetails.getProviderId();
                 BookingDetailDTO bookingDetailDTO = bookingService.updateBookingStatus(providerId, bookingId, status);
 
-                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking status updated successfully",
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Cập nhật trạng thái thành công",
                                 bookingDetailDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Xem lịch sử đơn đặt phòng của tôi (Khách hàng)", description = "Khách hàng tra cứu lịch sử các đơn đặt phòng của mình kèm bộ lọc ngày, tháng, năm, trạng thái")
         @PreAuthorize("hasRole('CUSTOMER')")
         @GetMapping("/me")
         public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getMyBookingsByMonth(
@@ -114,12 +123,13 @@ public class BookingController {
                                 username, day, month, year, status, page, size);
 
                 ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
-                                "Bookings retrieved successfully",
+                                "Lấy danh sách đơn đặt phòng thành công",
                                 bookingSummaryDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Hủy đơn đặt phòng (Khách hàng)", description = "Khách hàng thực hiện hủy phòng cho đơn đặt đang chờ hoặc đã thanh toán")
         @PatchMapping("/{bookingId}/cancel")
         public ResponseEntity<ApiResponse<BookingDetailDTO>> cancelBooking(
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
@@ -128,12 +138,13 @@ public class BookingController {
                 String username = customerUserDetails.getUsername();
                 BookingDetailDTO bookingDetailDTO = bookingService.cancelBookingByCustomer(username, bookingId);
 
-                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Booking cancelled successfully",
+                ApiResponse<BookingDetailDTO> response = new ApiResponse<>(true, "Hủy đơn đặt phòng thành công",
                                 bookingDetailDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lọc danh sách đơn đặt theo trạng thái (Host)", description = "Lọc các đơn đặt phòng theo trạng thái cụ thể")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/accommodation/{accommodationId}")
         public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingsForHostByAccommodation(
@@ -148,12 +159,13 @@ public class BookingController {
                                 providerId, accommodationId, status, page, size);
 
                 ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
-                                "Bookings retrieved successfully",
+                                "Lấy danh sách đơn đặt phòng thành công",
                                 bookingSummaryDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Số lượng khách đang lưu trú hôm nay (Host)", description = "Đếm tổng số lượt khách hiện đang ở tại khách sạn trong ngày hôm nay")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-guests")
         public ResponseEntity<ApiResponse<Long>> getTodayGuests(
@@ -164,12 +176,13 @@ public class BookingController {
                 Long todayGuests = bookingService.getTodayGuests(providerId, accommodationId);
 
                 ApiResponse<Long> response = new ApiResponse<>(true,
-                                "Today's guests retrieved successfully",
+                                "Lấy số lượng khách hôm nay thành công",
                                 todayGuests);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Số lượt Check-in hôm nay (Host)", description = "Đếm số đơn đặt có lịch nhận phòng trong ngày hôm nay")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-checkins")
         public ResponseEntity<ApiResponse<Long>> getTodayCheckIns(
@@ -180,12 +193,13 @@ public class BookingController {
                 Long todayCheckIns = bookingService.getTodayCheckIns(providerId, accommodationId);
 
                 ApiResponse<Long> response = new ApiResponse<>(true,
-                                "Today's check-ins retrieved successfully",
+                                "Lấy số lượt Check-in hôm nay thành công",
                                 todayCheckIns);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Doanh thu trong ngày hôm nay (Host)", description = "Tính tổng số tiền thu được từ các đơn đặt phòng trong ngày hôm nay")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/today-revenue")
         public ResponseEntity<ApiResponse<Double>> getTodayRevenue(
@@ -196,12 +210,13 @@ public class BookingController {
                 Double todayRevenue = bookingService.getTodayRevenue(providerId, accommodationId);
 
                 ApiResponse<Double> response = new ApiResponse<>(true,
-                                "Today's revenue retrieved successfully",
+                                "Lấy doanh thu hôm nay thành công",
                                 todayRevenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Doanh thu trong tháng hiện tại (Host)", description = "Tính tổng doanh thu thu được trong tháng hiện tại")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/month-revenue")
         public ResponseEntity<ApiResponse<Double>> getMonthRevenue(
@@ -212,12 +227,13 @@ public class BookingController {
                 Double monthRevenue = bookingService.getMonthRevenue(providerId, accommodationId);
 
                 ApiResponse<Double> response = new ApiResponse<>(true,
-                                "This month's revenue retrieved successfully",
+                                "Lấy doanh thu tháng thành công",
                                 monthRevenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Doanh thu trong khoảng thời gian tùy chọn (Host)", description = "Tính tổng doanh thu giữa ngày bắt đầu và ngày kết thúc")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/revenue")
         public ResponseEntity<ApiResponse<Double>> getRevenueInDateRange(
@@ -231,12 +247,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Double> response = new ApiResponse<>(true,
-                                "Revenue in date range retrieved successfully",
+                                "Lấy doanh thu theo khoảng thời gian thành công",
                                 revenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Biểu đồ doanh thu 12 tháng trong năm (Host)", description = "Thống kê doanh thu chi tiết từng tháng (Tháng 1 -> Tháng 12) của năm được chọn")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/monthly-revenue")
         public ResponseEntity<ApiResponse<List<Map<String, Double>>>> getMonthlyRevenue(
@@ -249,12 +266,13 @@ public class BookingController {
                                 providerId, accommodationId, year);
 
                 ApiResponse<List<Map<String, Double>>> response = new ApiResponse<>(true,
-                                "Monthly revenue retrieved successfully",
+                                "Lấy doanh thu các tháng thành công",
                                 monthlyRevenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Thống kê so sánh doanh thu các năm (Host)", description = "Thống kê doanh thu phân chia theo từng năm")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/yearly-revenue")
         public ResponseEntity<ApiResponse<List<Map<String, Double>>>> getYearlyRevenue(
@@ -266,12 +284,13 @@ public class BookingController {
                                 providerId, accommodationId);
 
                 ApiResponse<List<Map<String, Double>>> response = new ApiResponse<>(true,
-                                "Yearly revenue retrieved successfully",
+                                "Lấy doanh thu các năm thành công",
                                 yearlyRevenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Báo cáo tổng quan chỉ số kinh doanh (Host)", description = "Thống kê số đơn hoàn thành, số đơn hủy, tổng doanh thu và giá trị trung bình mỗi đơn")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/statistics")
         public ResponseEntity<ApiResponse<Map<String, Object>>> getBookingStatistics(
@@ -285,12 +304,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Map<String, Object>> response = new ApiResponse<>(true,
-                                "Booking statistics retrieved successfully",
+                                "Lấy dữ liệu thống kê tổng quan thành công",
                                 statistics);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Phân tích doanh thu theo từng loại phòng (Host)", description = "Báo cáo đóng góp doanh thu và số lượng đơn đặt của từng loại phòng")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/revenue-by-room-type")
         public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getRevenueByRoomType(
@@ -304,12 +324,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<List<Map<String, Object>>> response = new ApiResponse<>(true,
-                                "Revenue by room type retrieved successfully",
+                                "Lấy doanh thu theo loại phòng thành công",
                                 revenueByRoomType);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Báo cáo tổng doanh thu (Host)", description = "Lấy tổng doanh thu trong khoảng thời gian")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-revenue")
         public ResponseEntity<ApiResponse<Double>> getTotalRevenueInDateRange(
@@ -323,12 +344,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Double> response = new ApiResponse<>(true,
-                                "Total revenue retrieved successfully",
+                                "Lấy tổng doanh thu thành công",
                                 totalRevenue);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Báo cáo tổng số lượng đơn đặt (Host)", description = "Lấy tổng số lượng đơn đặt trong khoảng thời gian")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-bookings")
         public ResponseEntity<ApiResponse<Long>> getTotalBookingsInDateRange(
@@ -342,12 +364,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Long> response = new ApiResponse<>(true,
-                                "Total bookings retrieved successfully",
+                                "Lấy tổng số lượng đơn đặt thành công",
                                 totalBookings);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Báo cáo tổng số đơn đặt đã hủy (Host)", description = "Lấy tổng số đơn đặt phòng bị hủy trong khoảng thời gian")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-canceled")
         public ResponseEntity<ApiResponse<Long>> getTotalCanceledBookingsInDateRange(
@@ -361,12 +384,13 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Long> response = new ApiResponse<>(true,
-                                "Total canceled bookings retrieved successfully",
+                                "Lấy tổng số đơn bị hủy thành công",
                                 totalCanceled);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Báo cáo tổng số đêm lưu trú (Host)", description = "Tính tổng số đêm khách ở tại khách sạn trong khoảng thời gian")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/{accommodationId}/report/total-nights")
         public ResponseEntity<ApiResponse<Long>> getTotalNightsInDateRange(
@@ -380,7 +404,7 @@ public class BookingController {
                                 providerId, accommodationId, startDate, endDate);
 
                 ApiResponse<Long> response = new ApiResponse<>(true,
-                                "Total nights retrieved successfully",
+                                "Lấy tổng số đêm lưu trú thành công",
                                 totalNights);
 
                 return ResponseEntity.ok(response);
