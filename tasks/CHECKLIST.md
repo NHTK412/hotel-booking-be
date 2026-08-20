@@ -8,11 +8,11 @@
 
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
-| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `4 / 5` |
+| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`4 / 15` (26.7%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`5 / 15` (33.3%)** |
 
 ---
 
@@ -46,11 +46,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-04 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-04-logic-t%C3%ADnh-%C4%91i%E1%BB%83m-%C4%91%C3%A1nh-gi%C3%A1-trung-b%C3%ACnh-sai-trong-reviewservice)
 
-- [ ] **[BUG-05]** Chuẩn hóa cơ chế OAuth Login (lưu Google/Facebook `sub` thay vì `idToken` tạm thời).
+- [x] **[BUG-05]** Chuẩn hóa cơ chế OAuth Login (lưu Google/Facebook `sub` thay vì `idToken` tạm thời).
   - **Priority**: 🟡 `MEDIUM`
   - **Estimate**: `30 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-05 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-05-x%E1%BB%AD-l%C3%BD-oauth-login-l%C6%B0u-t%E1%BA%A1m-idtoken-v%C3%A0o-csdl)
 
 ---

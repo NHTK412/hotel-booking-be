@@ -43,7 +43,7 @@ public class ReviewService {
         Booking booking = bookingRepository.findById(reviewRequestDTO.getBookingId())
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
 
-        if (!booking.getUser().getUserAuthProvider().getProviderUserId().equals(providerId)) {
+        if (!booking.getUser().getId().equals(userAuthProvider.getUser().getId())) {
             throw new NotFoundException("Booking not found for this user");
         }
 

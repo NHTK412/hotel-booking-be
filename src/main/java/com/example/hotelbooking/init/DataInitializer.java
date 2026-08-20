@@ -35,6 +35,9 @@ public class DataInitializer implements CommandLineRunner {
 
             User adminUser = new User();
             adminUser.setEmail(adminUsername);
+            adminUser.setName("Admin");
+            adminUser.setRole(UserRoleEnum.ROLE_ADMIN);
+            adminUser.setIsActive(true);
 
             UserAuthProvider authProvider = new UserAuthProvider();
             authProvider.setType(AuthProviderTypeEnum.LOCAL);
@@ -42,10 +45,7 @@ public class DataInitializer implements CommandLineRunner {
             authProvider.setPassword(encodedPassword);
             authProvider.setUser(adminUser);
 
-            adminUser.setUserAuthProvider(authProvider);
-            adminUser.setName("Admin");
-            adminUser.setRole(UserRoleEnum.ROLE_ADMIN);
-            adminUser.setIsActive(true);
+            adminUser.getAuthProviders().add(authProvider);
 
             userRepository.save(adminUser);
         }

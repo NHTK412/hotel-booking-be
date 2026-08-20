@@ -3,6 +3,7 @@ package com.example.hotelbooking.dto.auth;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,10 +12,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class OauthLoginDTO {
 
     private AuthProviderTypeEnum provider;
     private String accessToken;
     private String idToken;
+    private String sub;
+    private String email;
     private String name;
+    private String avatarUrl;
 }
