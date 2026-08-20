@@ -238,7 +238,7 @@ public class BookingService {
                                 start,
                                 end,
                                 status,
-                                userAuthProvider.getProviderUserId(),
+                                userAuthProvider.getUser().getId(),
                                 pageable);
 
                 return bookingsPage.stream()

@@ -34,13 +34,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                 (:start IS NULL OR b.checkInAt >= :start)
                                 AND (:end IS NULL OR b.checkInAt < :end)
                                 AND (:status IS NULL OR b.status = :status)
-                                AND b.user.userAuthProvider.providerUserId = :providerId
+                                AND b.user.id = :userId
                         """)
         Page<Booking> findBookingsByCustomer(
                         @Param("start") LocalDateTime start,
                         @Param("end") LocalDateTime end,
                         @Param("status") BookingStatusEnum status,
-                        @Param("providerId") String providerId,
+                        @Param("userId") Long userId,
                         Pageable pageable);
 
         @Query("""
@@ -99,4 +99,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         List<Booking> findByStatusAndExpiredAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
 
         List<Booking> findByStatusAndCheckInAtBefore(BookingStatusEnum status, LocalDateTime dateTime);
+
 }
