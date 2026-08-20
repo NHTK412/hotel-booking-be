@@ -29,7 +29,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
         @Query("""
                         SELECT a FROM Accommodation a WHERE a.geohash LIKE :prefix% AND a.type = :type
                         """)
-        List<Accommodation> findNearbyWithType(@Param("prefix") String prefix, @Param("type") String type);
+        List<Accommodation> findNearbyWithType(@Param("prefix") String prefix, @Param("type") AccommodationTypeEnum type);
 
         @Query("""
                         SELECT a FROM Accommodation a WHERE a.isDeleted = false AND
@@ -42,17 +42,17 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
                         SELECT a
                         FROM Accommodation a
                         WHERE a.isDeleted = false
-                        AND (:locationId IS NULL OR a.location.id = :locationId)
+                        AND (:locationId IS NULL OR a.location.locationId = :locationId)
                         AND (:type IS NULL OR a.type = :type)
                                 """)
-        Page<Accommodation> findByIsDeletedFalseAndLocationId(Pageable pageable, Long locationId,
-                        AccommodationTypeEnum type);
+        Page<Accommodation> findByIsDeletedFalseAndLocationId(Pageable pageable, @Param("locationId") Long locationId,
+                        @Param("type") AccommodationTypeEnum type);
 
         @Query("""
                         SELECT a
                         FROM Accommodation a
                         WHERE a.isDeleted = false
-                        AND a.location.id = :locationId
+                        AND a.location.locationId = :locationId
                         AND a.type = :type
                         ORDER BY COALESCE(
                                 (SELECT AVG(CAST(rt.star AS double))

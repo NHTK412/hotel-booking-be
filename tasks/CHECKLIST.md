@@ -8,11 +8,11 @@
 
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
-| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `1 / 5` |
+| **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | 🔄 Đang xử lý | `2 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | ⏳ Sẵn sàng | `0 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`1 / 15` (6.7%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`2 / 15` (13.3%)** |
 
 ---
 
@@ -25,11 +25,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-01 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-01-sai-ch%C3%ADnh-t%E1%BA%A3-enum-cancelled-trong-query-khi%E1%BA%BFn-ph%C3%B2ng-%C4%91%C3%A3-h%E1%BB%A7y-kh%C3%B4ng-th%E1%BB%83-%C4%91%E1%BA%B7t-l%E1%BA%A1i)
 
-- [ ] **[BUG-02]** Sửa lỗi thuộc tính `a.location.id` thành `a.location.locationId` trong `AccommodationRepository`.
+- [x] **[BUG-02]** Sửa lỗi thuộc tính `a.location.id` thành `a.location.locationId` trong `AccommodationRepository`.
   - **Priority**: 🔴 `CRITICAL`
   - **Estimate**: `10 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [BUG-02 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#bug-02-sai-t%C3%AAn-thu%E1%BB%99c-t%C3%ADnh-jpql-alocationid-g%C3%A2y-crash-runtime)
 
 - [ ] **[BUG-03]** Mở quyền truy cập công khai (`permitAll`) cho các API tra cứu công cộng trong `SecurityConfig`.

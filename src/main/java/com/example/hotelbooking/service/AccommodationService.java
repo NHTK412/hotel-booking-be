@@ -323,7 +323,12 @@ public class AccommodationService {
                 List<Accommodation> nearbyAccommodations;
 
                 if (type != null && !type.isEmpty()) {
-                        nearbyAccommodations = accommodationRepository.findNearbyWithType(prefix, type);
+                        try {
+                                AccommodationTypeEnum typeEnum = AccommodationTypeEnum.valueOf(type.toUpperCase());
+                                nearbyAccommodations = accommodationRepository.findNearbyWithType(prefix, typeEnum);
+                        } catch (IllegalArgumentException e) {
+                                nearbyAccommodations = accommodationRepository.findNearby(prefix);
+                        }
                 } else {
                         nearbyAccommodations = accommodationRepository.findNearby(prefix);
                 }
