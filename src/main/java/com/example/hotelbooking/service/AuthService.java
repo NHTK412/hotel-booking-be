@@ -154,12 +154,16 @@ public class AuthService {
         final UserAuthProvider userAuthProvider;
 
         if (userAuthProviderOptional.isEmpty()) {
-            // Account Linking: Nếu email đã tồn tại ở User khác -> Liên kết vào User đó
+            // Account Linking: Nếu email đã tồn tại ở User khác -> Kiểm tra role trước khi liên kết
             User existingUser = (email != null && !email.isBlank())
                     ? userRepository.findByEmail(email).orElse(null)
                     : null;
 
             if (existingUser != null) {
+                if (existingUser.getRole() != UserRoleEnum.ROLE_CUSTOMER) {
+                    throw new com.example.hotelbooking.exception.AccessDeniedException(
+                            "Only customer accounts can log in using OAuth. Host and Admin must log in with password.");
+                }
                 user = existingUser;
             } else {
                 user = new User();
@@ -181,6 +185,11 @@ public class AuthService {
         } else {
             userAuthProvider = userAuthProviderOptional.get();
             user = userAuthProvider.getUser();
+
+            if (user.getRole() != UserRoleEnum.ROLE_CUSTOMER) {
+                throw new com.example.hotelbooking.exception.AccessDeniedException(
+                        "Only customer accounts can log in using OAuth. Host and Admin must log in with password.");
+            }
         }
 
         String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(), UserRoleEnum.ROLE_CUSTOMER);
