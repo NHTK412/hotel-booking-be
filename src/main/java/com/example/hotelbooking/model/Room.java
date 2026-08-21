@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,4 +41,8 @@ public class Room extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "roomtypeId", nullable = false)
     private RoomType roomType;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 }

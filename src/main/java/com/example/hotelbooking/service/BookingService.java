@@ -19,6 +19,7 @@ import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.AccessDeniedException;
+import com.example.hotelbooking.exception.BadRequestException;
 import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Booking;
@@ -55,7 +56,18 @@ public class BookingService {
                 this.fcmService = fcmService;
         }
 
+        @Transactional
         public BookingDetailDTO createBooking(String username, BookingRequestDTO bookingRequestDTO) {
+
+                if (bookingRequestDTO.getCheckInDate() == null || bookingRequestDTO.getCheckOutDate() == null) {
+                        throw new BadRequestException("Check-in and check-out dates are required");
+                }
+                if (bookingRequestDTO.getCheckInDate().isBefore(LocalDate.now())) {
+                        throw new BadRequestException("Check-in date cannot be in the past");
+                }
+                if (!bookingRequestDTO.getCheckOutDate().isAfter(bookingRequestDTO.getCheckInDate())) {
+                        throw new BadRequestException("Check-out date must be after check-in date");
+                }
 
                 final List<Room> availableRooms = roomRepository
                                 .findRoomAvailableByRoomTypeId(bookingRequestDTO.getRoomTypeId(),
@@ -63,8 +75,12 @@ public class BookingService {
                                                 bookingRequestDTO.getCheckOutDate().atTime(12, 0));
 
                 if (availableRooms.isEmpty()) {
-                        throw new NotFoundException("No available rooms for the selected room type");
+                        throw new NotFoundException("No available rooms for the selected room type and dates");
                 }
+
+                // Cưỡng chế kiểm tra & tăng version của phòng bằng Optimistic Lock
+                final Room lockedRoom = roomRepository.findByIdWithOptimisticLock(availableRooms.get(0).getRoomId())
+                                .orElseThrow(() -> new NotFoundException("Selected room is no longer available"));
 
                 final UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(username)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
@@ -72,7 +88,7 @@ public class BookingService {
                 final User user = userAuthProvider.getUser();
 
                 Booking booking = new Booking();
-                booking.setRoom(availableRooms.get(0));
+                booking.setRoom(lockedRoom);
                 booking.setUser(user);
                 booking.setCustomerName(bookingRequestDTO.getCustomerName());
                 booking.setCustomerPhone(bookingRequestDTO.getCustomerPhone());
@@ -82,10 +98,10 @@ public class BookingService {
 
                 Integer numOfNights = (int) (bookingRequestDTO.getCheckOutDate().toEpochDay()
                                 - bookingRequestDTO.getCheckInDate().toEpochDay());
-                Double originalPrice = availableRooms.get(0).getRoomType().getPrice() * numOfNights;
+                Double originalPrice = lockedRoom.getRoomType().getPrice() * numOfNights;
 
                 booking.setOriginalPrice(originalPrice);
-                Double discount = availableRooms.get(0).getRoomType().getDiscount();
+                Double discount = lockedRoom.getRoomType().getDiscount();
                 if (discount == null) {
                         discount = 0.0;
                 }

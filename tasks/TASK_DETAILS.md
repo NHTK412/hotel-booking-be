@@ -113,20 +113,19 @@
 ### [TASK-06] Giải quyết lỗi Race Condition (Overbooking / Double Booking)
 - **Mức độ**: 🔴 High (Điểm cộng lớn khi phỏng vấn)
 - **Vấn đề (Problem)**:
-  - Trong `BookingService.createBooking()`, luồng xử lý gồm 2 bước rời rạc:
+  - Trong `BookingService.createBooking()`, luồng xử lý gồm 2 bước rời rạc và không có `@Transactional`:
     1. Kiểm tra phòng trống: `findRoomAvailableByRoomTypeId(...)`
     2. Tạo đơn đặt: `bookingRepository.save(booking)`
-  - Khi có 2 request gửi đồng thời (High Concurrency) cho 1 phòng duy nhất còn lại, cả 2 luồng đều thấy phòng còn trống và cùng tạo 2 đơn đặt đè lên nhau.
+  - Khi có nhiều request gửi đồng thời cho 1 phòng duy nhất còn lại, tất cả các luồng đều thấy phòng còn trống và cùng tạo nhiều đơn đặt đè lên nhau.
 - **Giải pháp (Technical Solution)**:
-  - **Cách 1 (Database Pessimistic Lock)**: Sử dụng `@Lock(LockModeType.PESSIMISTIC_WRITE)` khi truy vấn `Room` để khóa bản ghi phòng trong suốt transaction tạo đơn:
-    ```java
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT r FROM Room r WHERE r.roomId = :roomId")
-    Optional<Room> findByIdWithLock(@Param("roomId") Long roomId);
-    ```
-  - **Cách 2 (Distributed Lock với Redis)**: Khóa theo `roomTypeId + checkInDate + checkOutDate` bằng Redisson / Redis Template trước khi cho phép vào logic tạo booking.
+  - **Optimistic Locking (`@Version` + `LockModeType.OPTIMISTIC_FORCE_INCREMENT`)**:
+    1. Thêm trường `@Version private Long version;` vào Entity `Room`.
+    2. Trong `RoomRepository`, dùng `@Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)` khi truy vấn phòng được chọn để cưỡng chế tăng `version` khi commit.
+    3. Bao bọc `createBooking` trong `@Transactional`.
+    4. Bắt `ObjectOptimisticLockingFailureException` trong `GlobalExceptionHandler` và trả về `409 Conflict`.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Viết kịch bản test đồng thời (Concurrency Test) với 10 threads cùng đặt 1 phòng: Chỉ duy nhất 1 thread thành công, 9 threads còn lại nhận thông báo "Phòng đã hết".
+  - [x] Đặt phòng đồng thời trên cùng một phòng: chỉ 1 request thành công, các request đồng thời khác nhận `409 Conflict`.
+  - [x] Phương thức `createBooking` có `@Transactional` và validate ngày Check-in/Check-out.
 
 ---
 
