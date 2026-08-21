@@ -12,7 +12,10 @@ import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Location;
 import com.example.hotelbooking.repository.LocationRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
+@Transactional
 public class LocationService {
 
     private final LocationRepository locationRepository;

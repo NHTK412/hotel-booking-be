@@ -26,6 +26,7 @@ import com.github.davidmoten.geo.GeoHash;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class AccommodationService {
 
         private final AccommodationRepository accommodationRepository;

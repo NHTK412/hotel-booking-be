@@ -21,6 +21,7 @@ import com.example.hotelbooking.repository.UserRepository;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class UserService {
 
         @Value("${account.default.password}")

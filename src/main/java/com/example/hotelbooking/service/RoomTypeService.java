@@ -27,6 +27,7 @@ import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class RoomTypeService {
 
     private final RoomTypeRepository roomTypeRepository;

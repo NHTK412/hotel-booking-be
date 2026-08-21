@@ -36,6 +36,7 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class BookingService {
 
         private final BookingRepository bookingRepository;
@@ -633,6 +634,7 @@ public class BookingService {
         }
 
         @Scheduled(fixedDelay = 60000)
+        @Transactional
         public void expirePendingBookings() {
                 List<Booking> expiredBookings = bookingRepository
                                 .findByStatusAndExpiredAtBefore(BookingStatusEnum.WAITING_FOR_PAYMENT,
