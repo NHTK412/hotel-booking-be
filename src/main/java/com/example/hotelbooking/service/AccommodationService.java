@@ -22,6 +22,7 @@ import com.example.hotelbooking.repository.LocationRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 import com.github.davidmoten.geo.GeoHash;
+import com.example.hotelbooking.model.Location;
 
 import jakarta.transaction.Transactional;
 
