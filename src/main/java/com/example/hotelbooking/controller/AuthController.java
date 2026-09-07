@@ -15,6 +15,7 @@ import com.example.hotelbooking.dto.auth.AuthLoginDTO;
 import com.example.hotelbooking.dto.auth.AuthRegisterDTO;
 import com.example.hotelbooking.dto.auth.AuthResponseDTO;
 import com.example.hotelbooking.dto.auth.OauthLoginDTO;
+import com.example.hotelbooking.dto.auth.RefreshTokenRequestDTO;
 import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.AuthService;
 import com.example.hotelbooking.util.ApiResponse;
@@ -78,5 +79,19 @@ public class AuthController {
         String email = userDetails.getUsername();
         Boolean result = authService.resetPassword(email, newPassword);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đặt lại mật khẩu thành công", result));
+    }
+
+    @Operation(summary = "Làm mới Access Token (Token Rotation)", description = "Nhận Refresh Token còn hiệu lực, kiểm tra đối chiếu Redis, tạo Access Token mới và cấp Refresh Token mới (thu hồi Refresh Token cũ)")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> refreshToken(@RequestBody RefreshTokenRequestDTO requestDTO) {
+        AuthResponseDTO authResponse = authService.refreshToken(requestDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Làm mới token thành công", authResponse));
+    }
+
+    @Operation(summary = "Đăng xuất tài khoản", description = "Thu hồi Refresh Token và xóa phiên đăng nhập khỏi Redis")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Boolean>> logout(@RequestBody(required = false) RefreshTokenRequestDTO requestDTO) {
+        Boolean result = authService.logout(requestDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Đăng xuất thành công", result));
     }
 }

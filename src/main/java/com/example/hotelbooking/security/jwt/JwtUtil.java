@@ -19,8 +19,11 @@ public class JwtUtil {
     @Value("${jwt.secret-key}")
     private String secretKey;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.access-token-expiration-ms:${jwt.expiration-ms:900000}}")
     private Long expirationMs;
+
+    @Value("${jwt.refresh-token-expiration-ms:604800000}")
+    private Long refreshTokenExpirationMs;
 
     public String generateToken(String email, UserRoleEnum role) {
         Key key = Keys.hmacShaKeyFor(secretKey.getBytes());
@@ -67,5 +70,9 @@ public class JwtUtil {
 
     public Long getExpirationMs() {
         return expirationMs;
+    }
+
+    public Long getRefreshTokenExpirationMs() {
+        return refreshTokenExpirationMs;
     }
 }

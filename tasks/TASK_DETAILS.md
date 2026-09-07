@@ -196,8 +196,9 @@
     - Nhận `refreshToken`, kiểm tra tính hợp lệ và đối chiếu với Redis.
     - Tạo `accessToken` mới (kèm cơ chế **Token Rotation** cấp luôn `refreshToken` mới và hủy token cũ).
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Gửi request `POST /auth/refresh-token` với token hợp lệ trả về access token mới.
-  - [ ] Gửi token giả mạo hoặc token đã bị thu hồi trả về lỗi `401/403`.
+  - [x] Gửi request `POST /auth/refresh-token` với token hợp lệ trả về access token mới và refresh token mới (Token Rotation).
+  - [x] Gửi token giả mạo, token hết hạn hoặc token đã bị thu hồi trả về lỗi `401 Unauthorized` (`InvalidCredentialsException`).
+  - [x] Đã viết trọn bộ 5 Unit Test tự động cho `AuthServiceTest` (`testLogin_Success_StoresRefreshTokenInRedis`, `testRefreshToken_Success_RotatesTokens`, `testRefreshToken_InvalidToken_ThrowsException`, `testRefreshToken_InactiveUser_ThrowsExceptionAndCleansUp`, `testLogout_Success_RemovesTokensFromRedis`) và pass 100%.
 
 ---
 

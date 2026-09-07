@@ -10,9 +10,9 @@
 | :--- | :---: | :---: | :---: |
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ✅ Hoàn thành | `3 / 3` |
-| **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
+| **Phase 3: Security & Validation** | 4 tasks | 🔄 In Progress | `1 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`9 / 15` (60.0%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`10 / 15` (66.7%)** |
 
 ---
 
@@ -82,11 +82,11 @@
 
 ## 🟢 Phase 3: Hoàn Thiện Bảo Mật & Validation (Security & Data Integrity)
 
-- [ ] **[TASK-09]** Triển khai cơ chế lưu trữ Refresh Token trên Redis và API `/auth/refresh-token`.
+- [x] **[TASK-09]** Triển khai cơ chế lưu trữ Refresh Token trên Redis và API `/auth/refresh-token`.
   - **Priority**: 🔴 `HIGH`
   - **Estimate**: `1 - 2 hours`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-09 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-09-tri%E1%BB%83n-khai-c%C6%A1-ch%E1%BA%BF-refresh-token--token-rotation)
 
 - [ ] **[TASK-10]** Chuẩn hóa `PasswordEncoder` thành Spring Bean dùng chung.

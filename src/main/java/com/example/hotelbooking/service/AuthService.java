@@ -23,6 +23,7 @@ import com.example.hotelbooking.dto.auth.AuthLoginDTO;
 import com.example.hotelbooking.dto.auth.AuthRegisterDTO;
 import com.example.hotelbooking.dto.auth.AuthResponseDTO;
 import com.example.hotelbooking.dto.auth.OauthLoginDTO;
+import com.example.hotelbooking.dto.auth.RefreshTokenRequestDTO;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.GenderEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
@@ -76,20 +77,7 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(), user.getRole());
-
-        byte[] refreshTokenBytes = new byte[50];
-        secureRandom.nextBytes(refreshTokenBytes);
-        String refreshToken = new String(Hex.encode(refreshTokenBytes));
-
-        return AuthResponseDTO.builder()
-                .email(userAuthProvider.getProviderUserId())
-                .role(user.getRole())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(jwtUtil.getExpirationMs())
-                .userId(user.getId())
-                .build();
+        return buildAuthResponse(user, userAuthProvider.getProviderUserId());
     }
 
     @Transactional
@@ -192,20 +180,7 @@ public class AuthService {
             }
         }
 
-        String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(), UserRoleEnum.ROLE_CUSTOMER);
-
-        byte[] refreshTokenBytes = new byte[50];
-        secureRandom.nextBytes(refreshTokenBytes);
-        String refreshToken = new String(Hex.encode(refreshTokenBytes));
-
-        return AuthResponseDTO.builder()
-                .email(user.getEmail())
-                .role(user.getRole())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(jwtUtil.getExpirationMs())
-                .userId(user.getId())
-                .build();
+        return buildAuthResponse(user, userAuthProvider.getProviderUserId());
     }
 
     private Map<String, String> parseIdTokenPayload(String idToken) {
@@ -258,20 +233,7 @@ public class AuthService {
 
         userAuthProviderRepository.save(userAuthProvider);
 
-        String accessToken = jwtUtil.generateToken(newUser.getEmail(), newUser.getRole());
-
-        byte[] refreshTokenBytes = new byte[50];
-        secureRandom.nextBytes(refreshTokenBytes);
-        String refreshToken = new String(Hex.encode(refreshTokenBytes));
-
-        return AuthResponseDTO.builder()
-                .email(newUser.getEmail())
-                .role(newUser.getRole())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(jwtUtil.getExpirationMs())
-                .userId(newUser.getId())
-                .build();
+        return buildAuthResponse(newUser, newUser.getEmail());
     }
 
     @Transactional
@@ -294,27 +256,106 @@ public class AuthService {
         if (cachedOtp != null && cachedOtp.equals(otp)) {
             redisTemplate.delete("otp::" + email);
 
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("isValid", true);
-
             UserAuthProvider userAuthProvider = userAuthProviderRepository
                     .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL, email)
                     .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
-            String accessToken = jwtUtil.generateToken(userAuthProvider.getProviderUserId(),
-                    userAuthProvider.getUser().getRole());
+            AuthResponseDTO authResponse = buildAuthResponse(userAuthProvider.getUser(),
+                    userAuthProvider.getProviderUserId());
 
-            byte[] refreshTokenBytes = new byte[50];
-            secureRandom.nextBytes(refreshTokenBytes);
-            String refreshToken = new String(Hex.encode(refreshTokenBytes));
-            responseData.put("userId", userAuthProvider.getUser().getId());
-            responseData.put("accessToken", accessToken);
-            responseData.put("refreshToken", refreshToken);
-            responseData.put("expiresIn", jwtUtil.getExpirationMs());
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("isValid", true);
+            responseData.put("userId", authResponse.getUserId());
+            responseData.put("accessToken", authResponse.getAccessToken());
+            responseData.put("refreshToken", authResponse.getRefreshToken());
+            responseData.put("expiresIn", authResponse.getExpiresIn());
             return responseData;
         }
 
         return Map.of("isValid", false);
+    }
+
+    @Transactional
+    public AuthResponseDTO refreshToken(RefreshTokenRequestDTO requestDTO) {
+        if (requestDTO == null || requestDTO.getRefreshToken() == null || requestDTO.getRefreshToken().isBlank()) {
+            throw new InvalidCredentialsException("Refresh token is required");
+        }
+
+        String incomingRefreshToken = requestDTO.getRefreshToken().trim();
+        String userIdStr = redisTemplate.opsForValue().get("RT::" + incomingRefreshToken);
+
+        if (userIdStr == null || userIdStr.isBlank()) {
+            throw new InvalidCredentialsException("Invalid or expired refresh token");
+        }
+
+        Long userId;
+        try {
+            userId = Long.valueOf(userIdStr);
+        } catch (NumberFormatException e) {
+            redisTemplate.delete("RT::" + incomingRefreshToken);
+            throw new InvalidCredentialsException("Invalid refresh token payload");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidCredentialsException("User account not found"));
+
+        if (user.getIsActive() == null || !user.getIsActive()) {
+            redisTemplate.delete("RT::" + incomingRefreshToken);
+            redisTemplate.delete("RT_USER::" + userId);
+            throw new InvalidCredentialsException("User account is inactive");
+        }
+
+        // Token Rotation: Thu hồi Refresh Token cũ đã sử dụng
+        redisTemplate.delete("RT::" + incomingRefreshToken);
+
+        // Lấy providerUserId của user (mặc định ưu tiên provider đầu tiên hoặc email)
+        String providerUserId = userAuthProviderRepository.findByUser_Id(userId).stream()
+                .findFirst()
+                .map(UserAuthProvider::getProviderUserId)
+                .orElse(user.getEmail());
+
+        // Cấp cặp token mới và lưu vào Redis
+        return buildAuthResponse(user, providerUserId);
+    }
+
+    @Transactional
+    public Boolean logout(RefreshTokenRequestDTO requestDTO) {
+        if (requestDTO != null && requestDTO.getRefreshToken() != null && !requestDTO.getRefreshToken().isBlank()) {
+            String incomingRefreshToken = requestDTO.getRefreshToken().trim();
+            String userIdStr = redisTemplate.opsForValue().get("RT::" + incomingRefreshToken);
+            redisTemplate.delete("RT::" + incomingRefreshToken);
+            if (userIdStr != null && !userIdStr.isBlank()) {
+                redisTemplate.delete("RT_USER::" + userIdStr);
+            }
+        }
+        return true;
+    }
+
+    private AuthResponseDTO buildAuthResponse(User user, String providerUserId) {
+        String accessToken = jwtUtil.generateToken(providerUserId, user.getRole());
+
+        byte[] refreshTokenBytes = new byte[50];
+        secureRandom.nextBytes(refreshTokenBytes);
+        String refreshToken = new String(Hex.encode(refreshTokenBytes));
+
+        // Token Rotation: Xóa Refresh Token cũ của user trong Redis nếu có
+        String oldRefreshToken = redisTemplate.opsForValue().get("RT_USER::" + user.getId());
+        if (oldRefreshToken != null) {
+            redisTemplate.delete("RT::" + oldRefreshToken);
+        }
+
+        // Lưu Refresh Token mới vào Redis với TTL 7 ngày
+        redisTemplate.opsForValue().set("RT::" + refreshToken, String.valueOf(user.getId()), 7, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set("RT_USER::" + user.getId(), refreshToken, 7, TimeUnit.DAYS);
+
+        return AuthResponseDTO.builder()
+                .email(user.getEmail())
+                .role(user.getRole())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(jwtUtil.getExpirationMs())
+                .userId(user.getId())
+                .build();
     }
 
     @Transactional
