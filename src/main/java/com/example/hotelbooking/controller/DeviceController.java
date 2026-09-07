@@ -14,6 +14,7 @@ import com.example.hotelbooking.util.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "8. Thiết Bị & Thông Báo Đẩy (Devices & Push Notifications)", description = "Các API đăng ký mã thiết bị Firebase Cloud Messaging (FCM) và làm mới mã FCM Token để nhận thông báo đặt phòng")
@@ -28,7 +29,7 @@ public class DeviceController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Boolean>> registerDevice(
             @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-            @RequestBody DeviceRegistrationRequest request) {
+            @Valid @RequestBody DeviceRegistrationRequest request) {
 
         Boolean result = deviceService.registerDevice(customerUserDetails.getProviderId(), request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đăng ký thiết bị thành công", result));
@@ -38,7 +39,7 @@ public class DeviceController {
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Boolean>> refreshDevice(
             @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-            @RequestBody DeviceRegistrationRequest request) {
+            @Valid @RequestBody DeviceRegistrationRequest request) {
 
         Boolean result = deviceService.refreshDevice(request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Làm mới mã thiết bị thành công", result));

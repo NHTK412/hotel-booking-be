@@ -19,6 +19,7 @@ import com.example.hotelbooking.util.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "10. Cổng Thanh Toán ZaloPay (Payments)", description = "Các API tạo đơn hàng thanh toán qua ZaloPay Gateway và tiếp nhận Webhook Callback IPN từ ZaloPay")
 @RestController
@@ -36,7 +37,7 @@ public class ZaloPayController {
     @PostMapping("/create-order")
     public ResponseEntity<ApiResponse<ZaloPayResponseDTO>> createOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody CreateOrderRequest req) throws Exception {
+            @Valid @RequestBody CreateOrderRequest req) throws Exception {
 
         String username = userDetails.getUsername();
         ZaloPayResponseDTO res = zaloPayService.createOrder(username, req);

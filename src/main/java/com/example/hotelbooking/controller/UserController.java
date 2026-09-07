@@ -20,6 +20,7 @@ import com.example.hotelbooking.util.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "7. Người Dùng & Hồ Sơ (Users & Profiles)", description = "Các API xem thông tin cá nhân, cập nhật hồ sơ người dùng và Admin tạo tài khoản Host")
 @RestController
@@ -54,7 +55,7 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserResponseDTO>> updateCurrentUser(
             @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-            @RequestBody UserRequestDTO userRequestDTO) {
+            @Valid @RequestBody UserRequestDTO userRequestDTO) {
         String providerId = customerUserDetails.getUsername();
         UserResponseDTO userResponseDTO = userService.updateUserByProviderId(providerId, userRequestDTO);
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Cập nhật hồ sơ thành công", userResponseDTO);
@@ -65,7 +66,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/host")
     public ResponseEntity<ApiResponse<UserResponseDTO>> registerHost(
-            @RequestBody CreateHostDTO createHostDTO) {
+            @Valid @RequestBody CreateHostDTO createHostDTO) {
         UserResponseDTO userResponseDTO = userService.registerHost(createHostDTO);
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Đăng ký tài khoản Host thành công", userResponseDTO);
         return ResponseEntity.ok(response);

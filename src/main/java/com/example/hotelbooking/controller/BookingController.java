@@ -26,6 +26,7 @@ import com.example.hotelbooking.util.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "4. Đặt Phòng & Báo Cáo Doanh Thu (Bookings & Revenue)", description = "Các API đặt phòng, quản lý trạng thái đơn đặt, hủy phòng và báo cáo thống kê doanh thu cho Host")
 @RestController
@@ -42,7 +43,7 @@ public class BookingController {
         @PostMapping
         public ResponseEntity<ApiResponse<BookingDetailDTO>> createBooking(
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-                        @RequestBody BookingRequestDTO bookingRequestDTO) {
+                        @Valid @RequestBody BookingRequestDTO bookingRequestDTO) {
 
                 String username = customerUserDetails.getUsername();
                 BookingDetailDTO bookingDetailDTO = bookingService.createBooking(username, bookingRequestDTO);

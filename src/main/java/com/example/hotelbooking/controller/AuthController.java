@@ -2,6 +2,7 @@ package com.example.hotelbooking.controller;
 
 import java.util.Map;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,7 +37,7 @@ public class AuthController {
 
     @Operation(summary = "Đăng nhập bằng Email & Mật khẩu", description = "Dành cho Admin, Host và Customer xác thực qua email và mật khẩu cục bộ")
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponseDTO>> login(@RequestBody AuthLoginDTO loginDTO) {
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> login(@Valid @RequestBody AuthLoginDTO loginDTO) {
         AuthResponseDTO authResponse = authService.login(loginDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đăng nhập thành công", authResponse));
     }
@@ -50,7 +51,7 @@ public class AuthController {
 
     @Operation(summary = "Đăng ký tài khoản Khách hàng mới", description = "Tạo tài khoản khách hàng thông thường bằng họ tên, email, số điện thoại và mật khẩu")
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponseDTO>> register(@RequestBody AuthRegisterDTO registerDTO) {
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> register(@Valid @RequestBody AuthRegisterDTO registerDTO) {
         AuthResponseDTO authResponse = authService.register(registerDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đăng ký tài khoản thành công", authResponse));
     }
@@ -83,7 +84,7 @@ public class AuthController {
 
     @Operation(summary = "Làm mới Access Token (Token Rotation)", description = "Nhận Refresh Token còn hiệu lực, kiểm tra đối chiếu Redis, tạo Access Token mới và cấp Refresh Token mới (thu hồi Refresh Token cũ)")
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<AuthResponseDTO>> refreshToken(@RequestBody RefreshTokenRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> refreshToken(@Valid @RequestBody RefreshTokenRequestDTO requestDTO) {
         AuthResponseDTO authResponse = authService.refreshToken(requestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Làm mới token thành công", authResponse));
     }

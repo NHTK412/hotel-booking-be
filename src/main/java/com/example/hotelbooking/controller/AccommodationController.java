@@ -2,6 +2,7 @@ package com.example.hotelbooking.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -79,7 +80,7 @@ public class AccommodationController {
         @PreAuthorize("hasAnyRole('ADMIN')")
         @PostMapping
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> createAccommodation(
-                        @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
+                        @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
 
                 AccommodationDetailDTO createdAccommodation = accommodationService
                                 .createAccommodation(accommodationRequestDTO);
@@ -112,7 +113,7 @@ public class AccommodationController {
         @PutMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> updateAccommodation(
                         @PathVariable Long accommodationId,
-                        @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
+                        @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
 
                 AccommodationDetailDTO updatedAccommodation = accommodationService
                                 .updateAccommodation(accommodationId, accommodationRequestDTO);

@@ -28,6 +28,8 @@ import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.RoomTypeService;
 import com.example.hotelbooking.util.ApiResponse;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -127,7 +129,7 @@ public class RoomTypeController {
         @PostMapping
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> createRoomType(
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-                        @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
+                        @Valid @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
                 RoomTypeDetailDTO createdRoomType = roomTypeService.createRoomType(
                                 customerUserDetails.getProviderId(),
                                 roomTypeRequestDTO);
@@ -145,7 +147,7 @@ public class RoomTypeController {
         public ResponseEntity<ApiResponse<RoomTypeDetailDTO>> updateRoomType(
                         @PathVariable Long roomTypeId,
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-                        @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
+                        @Valid @RequestBody RoomTypeRequestDTO roomTypeRequestDTO) {
                 RoomTypeDetailDTO updatedRoomType = roomTypeService
                                 .updateRoomType(customerUserDetails.getProviderId(), roomTypeId, roomTypeRequestDTO);
 
@@ -194,7 +196,7 @@ public class RoomTypeController {
         public ResponseEntity<ApiResponse<List<RoomSummaryDTO>>> addRoomsToRoomType(
                         @PathVariable Long roomTypeId,
                         @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-                        @RequestBody RoomRequestDTO roomRequestDTO) {
+                        @Valid @RequestBody RoomRequestDTO roomRequestDTO) {
                 List<RoomSummaryDTO> addedRooms = roomTypeService.addRoomsToRoomType(
                                 customerUserDetails.getProviderId(),
                                 roomTypeId,

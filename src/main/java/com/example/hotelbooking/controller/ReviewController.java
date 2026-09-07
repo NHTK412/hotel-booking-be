@@ -20,6 +20,7 @@ import com.example.hotelbooking.util.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "5. Đánh Giá & Nhận Xét (Reviews)", description = "Các API xem đánh giá loại phòng và khách hàng gửi đánh giá điểm sao (1 - 5 sao) sau khi trả phòng")
@@ -47,7 +48,7 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ApiResponse<ReviewSummaryDTO>> createReview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody ReviewRequestDTO reviewRequestDTO) {
+            @Valid @RequestBody ReviewRequestDTO reviewRequestDTO) {
 
         String providerId = userDetails.getUsername();
         ReviewSummaryDTO createdReview = reviewService.createReview(providerId, reviewRequestDTO);

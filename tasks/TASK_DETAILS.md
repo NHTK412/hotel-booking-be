@@ -237,7 +237,11 @@
   - Thêm `@Valid` vào tất cả các Controller (`@RequestBody @Valid ...`).
   - Cấu hình bắt lỗi `MethodArgumentNotValidException` trong `GlobalExceptionHandler` trả về danh sách field bị lỗi cụ thể.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Gửi body không hợp lệ (ví dụ email sai định dạng) trả về mã `400 Bad Request` với message rõ ràng thay vì lỗi `500`.
+  - [x] Đã tích hợp `spring-boot-starter-validation` vào `pom.xml`.
+  - [x] Đã gắn Bean Validation annotations (`@NotBlank`, `@Email`, `@Pattern`, `@Size`, `@Positive`, `@NotNull`, `@FutureOrPresent`, `@Future`, `@Min`, `@Max`, `@NotEmpty`) cho toàn bộ request DTOs (`AuthRegisterDTO`, `AuthLoginDTO`, `RefreshTokenRequestDTO`, `BookingRequestDTO`, `RoomTypeRequestDTO`, `AccommodationRequestDTO`, `ReviewRequestDTO`, `CreateHostDTO`, `DeviceRegistrationRequest`, `RoomRequestDTO`, `UserRequestDTO`, `CreateOrderRequest`).
+  - [x] Đã thêm `@Valid` vào tất cả `@RequestBody` parameters trong các REST Controllers (`AuthController`, `BookingController`, `AccommodationController`, `RoomTypeController`, `ReviewController`, `UserController`, `DeviceController`, `ZaloPayController`).
+  - [x] Đã bắt ngoại lệ `MethodArgumentNotValidException` và `ConstraintViolationException` tập trung trong `GlobalExceptionHandler`, trả về mã `400 Bad Request` kèm chi tiết lỗi từng trường cụ thể.
+  - [x] Đã viết Unit Test `DtoValidationTest` với 19 test cases phủ toàn bộ DTO validation constraints và pass 100% (`BUILD SUCCESS`).
 
 ---
 
