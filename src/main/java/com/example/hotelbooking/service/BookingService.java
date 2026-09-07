@@ -345,14 +345,11 @@ public class BookingService {
                 LocalDateTime todayStart = LocalDate.now().atStartOfDay();
                 LocalDateTime todayEnd = todayStart.plusDays(1);
 
-                return bookingRepository.findBookingsByHost(
+                return bookingRepository.countGuestsInPeriod(
                                 accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckInAt().isBefore(todayEnd)
-                                                && booking.getCheckOutAt().isAfter(todayStart)
-                                                && (booking.getStatus() == BookingStatusEnum.PENDING))
-                                .count();
+                                BookingStatusEnum.PENDING,
+                                todayStart,
+                                todayEnd);
         }
 
         public Long getTodayCheckIns(String providerId, Long accommodationId) {
@@ -370,14 +367,11 @@ public class BookingService {
                 LocalDateTime todayStart = LocalDate.now().atStartOfDay();
                 LocalDateTime todayEnd = todayStart.plusDays(1);
 
-                return bookingRepository.findBookingsByHost(
+                return bookingRepository.countCheckInsBetween(
                                 accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckInAt().isAfter(todayStart)
-                                                && booking.getCheckInAt().isBefore(todayEnd)
-                                                && (booking.getStatus() == BookingStatusEnum.CHECKED_IN))
-                                .count();
+                                BookingStatusEnum.CHECKED_IN,
+                                todayStart,
+                                todayEnd);
         }
 
         public Double getTodayRevenue(String providerId, Long accommodationId) {
@@ -395,15 +389,11 @@ public class BookingService {
                 LocalDateTime todayStart = LocalDate.now().atStartOfDay();
                 LocalDateTime todayEnd = todayStart.plusDays(1);
 
-                return bookingRepository.findBookingsByHost(
+                return bookingRepository.calculateRevenueBetween(
                                 accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckOutAt().isAfter(todayStart)
-                                                && booking.getCheckOutAt().isBefore(todayEnd)
-                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
-                                .mapToDouble(Booking::getFinalPrice)
-                                .sum();
+                                BookingStatusEnum.CHECKED_OUT,
+                                todayStart,
+                                todayEnd);
         }
 
         public Double getMonthRevenue(String providerId, Long accommodationId) {
@@ -421,15 +411,11 @@ public class BookingService {
                 LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
                 LocalDateTime monthEnd = monthStart.plusMonths(1);
 
-                return bookingRepository.findBookingsByHost(
+                return bookingRepository.calculateRevenueBetween(
                                 accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckOutAt().isAfter(monthStart)
-                                                && booking.getCheckOutAt().isBefore(monthEnd)
-                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
-                                .mapToDouble(Booking::getFinalPrice)
-                                .sum();
+                                BookingStatusEnum.CHECKED_OUT,
+                                monthStart,
+                                monthEnd);
         }
 
         public Double getRevenueInDateRange(String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
@@ -447,15 +433,11 @@ public class BookingService {
                 LocalDateTime startDateTime = startDate.atStartOfDay();
                 LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
 
-                return bookingRepository.findBookingsByHost(
+                return bookingRepository.calculateRevenueBetween(
                                 accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckOutAt().isAfter(startDateTime)
-                                                && booking.getCheckOutAt().isBefore(endDateTime)
-                                                && booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
-                                .mapToDouble(Booking::getFinalPrice)
-                                .sum();
+                                BookingStatusEnum.CHECKED_OUT,
+                                startDateTime,
+                                endDateTime);
         }
 
         public List<Map<String, Double>> getMonthlyRevenue(String providerId, Long accommodationId, int year) {
@@ -470,18 +452,11 @@ public class BookingService {
                         throw new AccessDeniedException("Accommodation not found for the provider");
                 }
 
-                return bookingRepository.findBookingsByHost(
-                                accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
-                                .filter(booking -> booking.getCheckOutAt().getYear() == year)
-                                .collect(Collectors.groupingBy(
-                                                booking -> booking.getCheckOutAt().getMonthValue(),
-                                                Collectors.summingDouble(Booking::getFinalPrice)))
-                                .entrySet().stream()
-                                .sorted(Map.Entry.comparingByKey())
-                                .map(entry -> Map.of("month", entry.getKey().doubleValue(), "revenue", entry.getValue()))
+                List<Map<String, Object>> rawList = bookingRepository.fetchMonthlyRevenue(accommodationId, year);
+                return rawList.stream()
+                                .map(entry -> Map.of(
+                                                "month", ((Number) entry.get("month")).doubleValue(),
+                                                "revenue", ((Number) entry.get("revenue")).doubleValue()))
                                 .collect(Collectors.toList());
         }
 
@@ -497,17 +472,11 @@ public class BookingService {
                         throw new AccessDeniedException("Accommodation not found for the provider");
                 }
 
-                return bookingRepository.findBookingsByHost(
-                                accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getStatus() == BookingStatusEnum.CHECKED_OUT)
-                                .collect(Collectors.groupingBy(
-                                                booking -> booking.getCheckOutAt().getYear(),
-                                                Collectors.summingDouble(Booking::getFinalPrice)))
-                                .entrySet().stream()
-                                .sorted(Map.Entry.comparingByKey())
-                                .map(entry -> Map.of("year", entry.getKey().doubleValue(), "revenue", entry.getValue()))
+                List<Map<String, Object>> rawList = bookingRepository.fetchYearlyRevenue(accommodationId);
+                return rawList.stream()
+                                .map(entry -> Map.of(
+                                                "year", ((Number) entry.get("year")).doubleValue(),
+                                                "revenue", ((Number) entry.get("revenue")).doubleValue()))
                                 .collect(Collectors.toList());
         }
 
@@ -568,13 +537,7 @@ public class BookingService {
                 LocalDateTime startDateTime = startDate.atStartOfDay();
                 LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
 
-                return bookingRepository.findBookingsByHost(
-                                accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
-                                                && booking.getCheckInAt().isBefore(endDateTime))
-                                .count();
+                return bookingRepository.countBookingsByCheckInBetween(accommodationId, startDateTime, endDateTime);
         }
 
         public Long getTotalCanceledBookingsInDateRange(String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
@@ -592,14 +555,7 @@ public class BookingService {
                 LocalDateTime startDateTime = startDate.atStartOfDay();
                 LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
 
-                return bookingRepository.findBookingsByHost(
-                                accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
-                                                && booking.getCheckInAt().isBefore(endDateTime)
-                                                && booking.getStatus() == BookingStatusEnum.CANCELED)
-                                .count();
+                return bookingRepository.countCanceledBookingsBetween(accommodationId, startDateTime, endDateTime);
         }
 
         public Long getTotalNightsInDateRange(String providerId, Long accommodationId, LocalDate startDate, LocalDate endDate) {
@@ -617,20 +573,7 @@ public class BookingService {
                 LocalDateTime startDateTime = startDate.atStartOfDay();
                 LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
 
-                return bookingRepository.findBookingsByHost(
-                                accommodationId,
-                                null,
-                                Pageable.unpaged()).stream()
-                                .filter(booking -> booking.getCheckInAt().isAfter(startDateTime)
-                                                && booking.getCheckOutAt().isBefore(endDateTime)
-                                                && booking.getStatus() != BookingStatusEnum.CANCELED)
-                                .mapToLong(booking -> {
-                                        long nights = java.time.temporal.ChronoUnit.DAYS.between(
-                                                        booking.getCheckInAt().toLocalDate(),
-                                                        booking.getCheckOutAt().toLocalDate());
-                                        return nights > 0 ? nights : 0;
-                                })
-                                .sum();
+                return bookingRepository.calculateTotalNightsBetween(accommodationId, startDateTime, endDateTime);
         }
 
         @Scheduled(fixedDelay = 60000)

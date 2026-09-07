@@ -54,6 +54,120 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         @Param("status") BookingStatusEnum status,
                         Pageable pageable);
 
+        @Query("""
+                        SELECT COUNT(b)
+                        FROM Booking b
+                        WHERE b.room.roomType.accommodation.accommodationId = :accommodationId
+                          AND b.status = :status
+                          AND b.checkInAt < :end
+                          AND b.checkOutAt > :start
+                        """)
+        Long countGuestsInPeriod(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("status") BookingStatusEnum status,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
+        @Query("""
+                        SELECT COUNT(b)
+                        FROM Booking b
+                        WHERE b.room.roomType.accommodation.accommodationId = :accommodationId
+                          AND b.status = :status
+                          AND b.checkInAt >= :start
+                          AND b.checkInAt < :end
+                        """)
+        Long countCheckInsBetween(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("status") BookingStatusEnum status,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
+        @Query("""
+                        SELECT COALESCE(SUM(b.finalPrice), 0.0)
+                        FROM Booking b
+                        WHERE b.room.roomType.accommodation.accommodationId = :accommodationId
+                          AND b.status = :status
+                          AND b.checkOutAt >= :start
+                          AND b.checkOutAt < :end
+                        """)
+        Double calculateRevenueBetween(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("status") BookingStatusEnum status,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
+        @Query(nativeQuery = true, value = """
+                        SELECT
+                                MONTH(b.check_out_at) AS month,
+                                COALESCE(SUM(b.final_price), 0.0) AS revenue
+                        FROM bookings b
+                        INNER JOIN rooms r ON b.room_id = r.room_id
+                        INNER JOIN room_types rt ON r.roomtype_id = rt.roomtype_id
+                        WHERE rt.accommodation_id = :accommodationId
+                          AND b.status = 'CHECKED_OUT'
+                          AND YEAR(b.check_out_at) = :year
+                        GROUP BY MONTH(b.check_out_at)
+                        ORDER BY MONTH(b.check_out_at) ASC
+                        """)
+        List<Map<String, Object>> fetchMonthlyRevenue(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("year") int year);
+
+        @Query(nativeQuery = true, value = """
+                        SELECT
+                                YEAR(b.check_out_at) AS year,
+                                COALESCE(SUM(b.final_price), 0.0) AS revenue
+                        FROM bookings b
+                        INNER JOIN rooms r ON b.room_id = r.room_id
+                        INNER JOIN room_types rt ON r.roomtype_id = rt.roomtype_id
+                        WHERE rt.accommodation_id = :accommodationId
+                          AND b.status = 'CHECKED_OUT'
+                        GROUP BY YEAR(b.check_out_at)
+                        ORDER BY YEAR(b.check_out_at) ASC
+                        """)
+        List<Map<String, Object>> fetchYearlyRevenue(
+                        @Param("accommodationId") Long accommodationId);
+
+        @Query("""
+                        SELECT COUNT(b)
+                        FROM Booking b
+                        WHERE b.room.roomType.accommodation.accommodationId = :accommodationId
+                          AND b.checkInAt >= :start
+                          AND b.checkInAt < :end
+                        """)
+        Long countBookingsByCheckInBetween(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
+        @Query("""
+                        SELECT COUNT(b)
+                        FROM Booking b
+                        WHERE b.room.roomType.accommodation.accommodationId = :accommodationId
+                          AND b.status = com.example.hotelbooking.enums.BookingStatusEnum.CANCELED
+                          AND b.checkInAt >= :start
+                          AND b.checkInAt < :end
+                        """)
+        Long countCanceledBookingsBetween(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
+        @Query(nativeQuery = true, value = """
+                        SELECT COALESCE(SUM(DATEDIFF(b.check_out_at, b.check_in_at)), 0)
+                        FROM bookings b
+                        INNER JOIN rooms r ON b.room_id = r.room_id
+                        INNER JOIN room_types rt ON r.roomtype_id = rt.roomtype_id
+                        WHERE rt.accommodation_id = :accommodationId
+                          AND b.status != 'CANCELED'
+                          AND b.check_in_at >= :start
+                          AND b.check_out_at <= :end
+                        """)
+        Long calculateTotalNightsBetween(
+                        @Param("accommodationId") Long accommodationId,
+                        @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end);
+
         @Query(nativeQuery = true, value = """
                         SELECT
                                 SUM(CASE WHEN b.status = 'CHECKED_OUT' THEN 1 ELSE 0 END) AS completedBookings,

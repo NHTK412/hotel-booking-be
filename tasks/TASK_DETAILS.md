@@ -150,8 +150,8 @@
         @Param("end") LocalDateTime end);
     ```
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Tốc độ phản hồi các API thống kê đạt dưới `50ms`.
-  - [ ] Không còn bất kỳ câu gọi `Pageable.unpaged()` nào để kéo toàn bộ entity về xử lý bằng Java Stream.
+  - [x] Tốc độ phản hồi các API thống kê đạt dưới `50ms`.
+  - [x] Đã xóa bỏ toàn bộ các lời gọi `Pageable.unpaged()` và chuyển sang JPQL / Native SQL Aggregate Queries trực tiếp (`COUNT`, `SUM`, `GROUP BY`, `DATEDIFF`).
 
 ---
 
