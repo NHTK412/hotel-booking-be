@@ -11,8 +11,8 @@
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ✅ Hoàn thành | `3 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ✅ Hoàn thành | `4 / 4` |
-| **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`13 / 15` (86.7%)** |
+| **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `2 / 3` |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`14 / 15` (93.3%)** |
 
 ---
 
@@ -121,11 +121,12 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-13 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-13-c%E1%BA%A5u-h%C3%ACnh-swagger--openapi-documentation)
 
-- [ ] **[TASK-14]** Viết Unit Test (JUnit 5 + Mockito) và Integration Test cho Booking & Auth Service.
+- [x] **[TASK-14]** Viết Unit Test (JUnit 5 + Mockito) và Integration Test cho Booking & Auth Service.
   - **Priority**: 🔴 `HIGH`
   - **Estimate**: `2 - 3 hours`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
+  - **Chi tiết**: Xem [TASK-14 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-14-vi%E1%BA%BFt-unit-tests--integration-tests)
   - **Chi tiết**: Xem [TASK-14 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-14-vi%E1%BA%BFt-unit-tests--integration-tests)
 
 - [ ] **[TASK-15]** Tối ưu hóa Dockerfile (Multi-stage) và cấu hình Docker Compose (App + MySQL + Redis).

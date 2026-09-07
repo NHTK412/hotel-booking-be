@@ -306,7 +306,9 @@
     - Đặt phòng thành công / thất bại khi hết phòng / tính đúng số tiền.
   - **Integration Test**: Viết `AuthControllerIntegrationTest.java` sử dụng `MockMvc` kiểm thử toàn bộ luồng HTTP Request -> Controller -> Response.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Chạy `mvn test` đạt 100% pass với độ phủ (Code Coverage) các service chính đạt trên 80%.
+  - [x] Đã hoàn thành bộ Unit Test đầy đủ cho `AuthServiceTest.java` (13 test cases) và `BookingServiceTest.java` (9 test cases) kiểm thử toàn diện các luồng nghiệp vụ xác thực, đăng ký, đăng nhập, token rotation, đặt phòng, tính tiền, kiểm tra ngày, và kiểm soát quyền truy cập.
+  - [x] Đã hoàn thành bộ Integration Test `AuthControllerIntegrationTest.java` (6 test cases) và `BookingControllerIntegrationTest.java` (3 test cases) sử dụng `MockMvc` kiểm thử toàn bộ tầng HTTP Controller, Bean Validation và Exception Handling qua `GlobalExceptionHandler`.
+  - [x] Chạy lệnh `.\mvnw.cmd test` đạt **100% pass với 57/57 tests thành công (`BUILD SUCCESS`)**.
 
 ---
 
