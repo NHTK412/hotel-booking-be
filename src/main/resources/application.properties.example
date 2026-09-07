@@ -34,3 +34,11 @@ spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 spring.output.ansi.enabled=ALWAYS
 
+# ZaloPay Payment Gateway Configuration
+zalopay.app-id=2553
+zalopay.key1=
+zalopay.key2=
+zalopay.endpoint=https://sb-openapi.zalopay.vn/v2/create
+zalopay.callback-url=
+zalopay.redirect-url=hotelbooking://calendar_detail
+

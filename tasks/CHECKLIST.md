@@ -10,9 +10,9 @@
 | :--- | :---: | :---: | :---: |
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ✅ Hoàn thành | `3 / 3` |
-| **Phase 3: Security & Validation** | 4 tasks | 🔄 In Progress | `3 / 4` |
+| **Phase 3: Security & Validation** | 4 tasks | ✅ Hoàn thành | `4 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`12 / 15` (80.0%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`13 / 15` (86.7%)** |
 
 ---
 
@@ -103,11 +103,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-11 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-11-b%E1%BB%95-sung-validation-cho-dto-spring-boot-starter-validation)
 
-- [ ] **[TASK-12]** Chuyển cấu hình ZaloPay và các khóa bảo mật vào `application.yml` / `@ConfigurationProperties`.
+- [x] **[TASK-12]** Chuyển cấu hình ZaloPay và các khóa bảo mật vào `application.yml` / `@ConfigurationProperties`.
   - **Priority**: 🟢 `LOW`
   - **Estimate**: `20 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-12 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-12-chuy%E1%BB%83n-c%E1%BA%A5u-h%C3%ACnh-zalopay--b%C3%AD-m%E1%BA%ADt-sang-applicationyml)
 
 ---

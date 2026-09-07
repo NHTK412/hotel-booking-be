@@ -264,7 +264,10 @@
     ```
   - Cấu hình trong `application.yml` kèm giá trị mặc định hoặc đọc từ biến môi trường (`${ZALOPAY_APP_ID:2553}`).
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Không còn bất kỳ secret key nào bị hardcode trực tiếp trong mã nguồn Java.
+  - [x] Đã tạo `ZaloPayProperties.java` sử dụng `@ConfigurationProperties(prefix = "zalopay")` để ánh xạ tự động toàn bộ thuộc tính (`appId`, `key1`, `key2`, `endpoint`, `callbackUrl`, `redirectUrl`).
+  - [x] Đã cấu hình các biến `zalopay.*` trong `application.properties`, `application-prod.properties`, và `application.properties.example` hỗ trợ nạp từ biến môi trường (`${ZALOPAY_APP_ID:2553}`, `${ZALOPAY_KEY1:...}`, etc.).
+  - [x] Đã xóa bỏ class tĩnh `ZaloPayConfig.java` và chuyển đổi `ZaloPayService.java` sang sử dụng Dependency Injection với `ZaloPayProperties`, không còn bất kỳ secret key nào bị hardcode trực tiếp trong mã nguồn Java.
+  - [x] Đã viết Unit Test `ZaloPayPropertiesTest.java` xác thực binding thành công và toàn bộ 29 unit tests đều PASS (`BUILD SUCCESS`).
 
 ---
 

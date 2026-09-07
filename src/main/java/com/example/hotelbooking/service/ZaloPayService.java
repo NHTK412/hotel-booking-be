@@ -18,10 +18,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.hotelbooking.config.ZaloPayConfig;
+import com.example.hotelbooking.config.ZaloPayProperties;
 import com.example.hotelbooking.dto.zalopay.CreateOrderRequest;
 import com.example.hotelbooking.dto.zalopay.ZaloPayResponseDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
@@ -37,21 +36,19 @@ import com.example.hotelbooking.util.crypto.HMACUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service xử lý logic nghiệp vụ tích hợp thanh toán ZaloPay
  */
 @Service
+@RequiredArgsConstructor
 public class ZaloPayService {
 
-    @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
-
-    @Autowired
-    private MailService mailService;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
+    private final MailService mailService;
+    private final ZaloPayProperties zaloPayProperties;
 
     private String getAppTransId(Long bookingId) {
         String date = new SimpleDateFormat("yyMMdd").format(new Date());
@@ -82,7 +79,7 @@ public class ZaloPayService {
         paymentRepository.save(p);
 
         Map<String, Object> order = new HashMap<>();
-        order.put("app_id", ZaloPayConfig.APP_ID);
+        order.put("app_id", zaloPayProperties.getAppId());
         order.put("app_trans_id", appTransId);
         order.put("app_user", userId);
         order.put("amount", b.getFinalPrice().longValue());
@@ -92,9 +89,9 @@ public class ZaloPayService {
         order.put("item", "[]");
 
         JSONObject embedData = new JSONObject();
-        embedData.put("redirecturl", ZaloPayConfig.REDIRECT_URL);
+        embedData.put("redirecturl", zaloPayProperties.getRedirectUrl());
         order.put("embed_data", embedData.toString());
-        order.put("callback_url", ZaloPayConfig.CALLBACK_URL);
+        order.put("callback_url", zaloPayProperties.getCallbackUrl());
 
         String data = order.get("app_id") + "|" +
                 order.get("app_trans_id") + "|" +
@@ -106,7 +103,7 @@ public class ZaloPayService {
 
         String mac = HMACUtil.HMacHexStringEncode(
                 HMACUtil.HMACSHA256,
-                ZaloPayConfig.KEY1,
+                zaloPayProperties.getKey1(),
                 data);
 
         order.put("mac", mac);
@@ -114,7 +111,7 @@ public class ZaloPayService {
         System.err.println("MAC: " + mac);
 
         CloseableHttpClient client = HttpClients.createDefault();
-        HttpPost post = new HttpPost(ZaloPayConfig.CREATE_ORDER_ENDPOINT);
+        HttpPost post = new HttpPost(zaloPayProperties.getEndpoint());
 
         List<NameValuePair> params = new ArrayList<>();
         for (Map.Entry<String, Object> entry : order.entrySet()) {
@@ -148,7 +145,7 @@ public class ZaloPayService {
         try {
             String mac = HMACUtil.HMacHexStringEncode(
                     HMACUtil.HMACSHA256,
-                    ZaloPayConfig.KEY2,
+                    zaloPayProperties.getKey2(),
                     dataStr);
 
             if (!mac.equals(reqMac)) {
