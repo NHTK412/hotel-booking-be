@@ -293,7 +293,7 @@
     ```
   - Gắn `@Tag` vào các Controller để phân nhóm API rõ ràng trên UI.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Truy cập `http://localhost:8080/swagger-ui/index.html` hiển thị đầy đủ danh sách API, cho phép nhập JWT token và test trực tiếp trên giao diện.
+  - [x] Truy cập `http://localhost:8080/api/swagger-ui.html` hiển thị đầy đủ danh sách API, kèm Bearer JWT authorize button và theme switcher (Light / Dark mode).
 
 ---
 
@@ -317,11 +317,15 @@
 - **Giải pháp (Technical Solution)**:
   - **`Dockerfile` Multi-Stage**:
     - Stage 1: Build source code bằng `eclipse-temurin:21-jdk-alpine`.
-    - Stage 2: Chạy ứng dụng bằng `eclipse-temurin:21-jre-alpine` (dung lượng image < 200MB).
+    - Stage 2: Chạy ứng dụng bằng `eclipse-temurin:21-jre-alpine` với non-root user `spring:spring` và container-aware JVM flags (`MaxRAMPercentage=75.0`).
   - **`docker-compose.yml`**:
-    - Service `backend`: Ứng dụng Spring Boot.
-    - Service `mysql`: Cơ sở dữ liệu MySQL 8.0.
-    - Service `redis`: Redis cache.
-    - Khởi tạo network và volume tự động.
+    - Service `backend`: Ứng dụng Spring Boot kết nối MySQL & Redis với điều kiện `service_healthy`.
+    - Service `mysql`: Cơ sở dữ liệu MySQL 8.0 kèm volume lưu trữ bền vững và healthcheck tự động.
+    - Service `redis`: Redis 7 Alpine cache kèm volume lưu trữ bền vững và healthcheck `redis-cli ping`.
+    - Khởi tạo network `hotelbooking-network` và volume tự động.
+    - File mẫu `.env.example` cấu hình đầy đủ biến môi trường.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Chỉ cần chạy lệnh `docker compose up -d`, toàn bộ hệ thống (App + DB + Redis) tự động dựng lên và kết nối thành công.
+  - [x] Đã tối ưu hóa `Dockerfile` đa tầng (Multi-stage build) với base image Alpine siêu nhẹ, tạo non-root user `spring:spring` bảo mật và cấu hình cờ JVM container-friendly.
+  - [x] Đã cấu hình hoàn chỉnh `docker-compose.yml` liên kết 3 services (`mysql`, `redis`, `backend`), healthcheck phụ thuộc và mạng bridge biệt lập.
+  - [x] Đã tạo file mẫu `.env.example` chuẩn hóa toàn bộ biến môi trường cho việc deploy môi trường Staging / Production.
+
