@@ -31,8 +31,11 @@ public class AccommodationRequestDTO {
     @Schema(description = "Địa chỉ số nhà, đường", example = "123 Đường Lê Lợi, Bến Nghé")
     private String address;
 
-    @Schema(description = "Tên thành phố", example = "Hồ Chí Minh")
+    @Schema(description = "Tên thành phố / Tỉnh", example = "Hồ Chí Minh")
     private String city;
+
+    @Schema(description = "Tên quận / Huyện", example = "Quận 1")
+    private String district;
 
     @Schema(description = "Tọa độ vĩ độ (Latitude)", example = "10.7769")
     private Double latitude;

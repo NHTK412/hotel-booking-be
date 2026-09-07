@@ -22,12 +22,17 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
         Page<Accommodation> findByIsDeletedFalseAndFavoritedByUsers_id(Pageable pageable, Long id);
 
         @Query("""
-                        SELECT a FROM Accommodation a WHERE a.geohash LIKE :prefix%
+                        SELECT a FROM Accommodation a
+                        WHERE a.isDeleted = false
+                        AND a.geohash LIKE :prefix%
                         """)
         List<Accommodation> findNearby(@Param("prefix") String prefix);
 
         @Query("""
-                        SELECT a FROM Accommodation a WHERE a.geohash LIKE :prefix% AND a.type = :type
+                        SELECT a FROM Accommodation a
+                        WHERE a.isDeleted = false
+                        AND a.geohash LIKE :prefix%
+                        AND a.type = :type
                         """)
         List<Accommodation> findNearbyWithType(@Param("prefix") String prefix, @Param("type") AccommodationTypeEnum type);
 
@@ -52,14 +57,15 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
                         SELECT a
                         FROM Accommodation a
                         WHERE a.isDeleted = false
-                        AND a.location.locationId = :locationId
-                        AND a.type = :type
+                        AND (:locationId IS NULL OR a.location.locationId = :locationId)
+                        AND (:type IS NULL OR a.type = :type)
                         ORDER BY COALESCE(
                                 (SELECT AVG(CAST(rt.star AS double))
                                         FROM RoomType rt
                                         WHERE rt.accommodation.accommodationId = a.accommodationId
+                                        AND rt.isDeleted = false
                                         AND rt.star IS NOT NULL),
-                                0) ASC
+                                0.0) DESC
                                 """)
         Page<Accommodation> findByLocationIdAndTypeSortedByStar(@Param("locationId") Long locationId,
                         @Param("type") AccommodationTypeEnum type, Pageable pageable);

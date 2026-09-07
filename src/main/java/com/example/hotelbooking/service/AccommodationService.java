@@ -50,15 +50,15 @@ public class AccommodationService {
 
                 List<Accommodation> accommodations = (sortBy != null && sortBy)
                                 ? accommodationRepository
+                                                .findByLocationIdAndTypeSortedByStar(
+                                                                locationId,
+                                                                type, pageable)
+                                                .getContent()
+                                : accommodationRepository
                                                 .findByIsDeletedFalseAndLocationId(
                                                                 pageable,
                                                                 locationId,
                                                                 type)
-                                                .getContent()
-                                : accommodationRepository
-                                                .findByLocationIdAndTypeSortedByStar(
-                                                                locationId,
-                                                                type, pageable)
                                                 .getContent();
 
                 return accommodations.stream().map(accommodation -> {
@@ -93,7 +93,7 @@ public class AccommodationService {
                                         .accommodationId(accommodation.getAccommodationId())
                                         .accommodationName(accommodation.getAccommodationName())
                                         .address(accommodation.getAddress())
-                                        .type(accommodation.getType().getDescription())
+                                        .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                         .image(accommodation.getImage())
                                         .discountMinPricePerNight(discountMinPricePerNight)
                                         .averageRating(averageRating)
@@ -135,7 +135,7 @@ public class AccommodationService {
                                         .accommodationId(accommodation.getAccommodationId())
                                         .accommodationName(accommodation.getAccommodationName())
                                         .address(accommodation.getAddress())
-                                        .type(accommodation.getType().getDescription())
+                                        .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                         .image(accommodation.getImage())
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
@@ -165,23 +165,41 @@ public class AccommodationService {
                 accommodation.setAccommodationName(accommodationRequestDTO.getAccommodationName());
                 accommodation.setDescription(accommodationRequestDTO.getDescription());
                 accommodation.setAddress(accommodationRequestDTO.getAddress());
-                accommodation.setCity(accommodationRequestDTO.getCity());
-                accommodation.setLatitude(accommodationRequestDTO.getLatitude());
-                accommodation.setLongitude(accommodationRequestDTO.getLongitude());
-
-                if (accommodationRequestDTO.getImage() != null) {
-                        accommodation.setImage(accommodationRequestDTO.getImage());
-                        fileUploadService.deleteFile(accommodationRequestDTO.getImage());
-                }
+                accommodation.setImage(accommodationRequestDTO.getImage());
                 accommodation.setType(accommodationRequestDTO.getType());
 
-                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
-                                .orElseThrow(() -> new NotFoundException("Location not found")));
+                Location location = locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found"));
+                accommodation.setLocation(location);
 
-                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
-                                accommodationRequestDTO.getLongitude(), 12);
+                // Gán district từ DTO hoặc fallback sang Location
+                if (accommodationRequestDTO.getDistrict() != null && !accommodationRequestDTO.getDistrict().isBlank()) {
+                        accommodation.setDistrict(accommodationRequestDTO.getDistrict());
+                } else {
+                        accommodation.setDistrict(location.getDistrictName());
+                }
 
-                accommodation.setGeohash(geoHash);
+                // Gán city từ DTO hoặc fallback sang Location
+                if (accommodationRequestDTO.getCity() != null && !accommodationRequestDTO.getCity().isBlank()) {
+                        accommodation.setCity(accommodationRequestDTO.getCity());
+                } else {
+                        accommodation.setCity(location.getProvinceName());
+                }
+
+                // Xử lý tọa độ với fallback từ Location
+                Double lat = accommodationRequestDTO.getLatitude() != null ? accommodationRequestDTO.getLatitude()
+                                : location.getLatitude();
+                Double lng = accommodationRequestDTO.getLongitude() != null ? accommodationRequestDTO.getLongitude()
+                                : location.getLongitude();
+                accommodation.setLatitude(lat);
+                accommodation.setLongitude(lng);
+
+                if (lat != null && lng != null) {
+                        String geoHash = GeoHash.encodeHash(lat, lng, 12);
+                        accommodation.setGeohash(geoHash);
+                } else if (location.getGeoHash() != null) {
+                        accommodation.setGeohash(location.getGeoHash());
+                }
 
                 accommodationRepository.save(accommodation);
 
@@ -206,22 +224,52 @@ public class AccommodationService {
                 accommodation.setAccommodationName(accommodationRequestDTO.getAccommodationName());
                 accommodation.setDescription(accommodationRequestDTO.getDescription());
                 accommodation.setAddress(accommodationRequestDTO.getAddress());
-                accommodation.setCity(accommodationRequestDTO.getCity());
-                accommodation.setLatitude(accommodationRequestDTO.getLatitude());
-                accommodation.setLongitude(accommodationRequestDTO.getLongitude());
 
-                if (accommodationRequestDTO.getImage() != null) {
-                        accommodation.setImage(accommodationRequestDTO.getImage());
-                        fileUploadService.deleteFile(accommodationRequestDTO.getImage());
+                Location location = locationRepository.findById(accommodationRequestDTO.getLocationId())
+                                .orElseThrow(() -> new NotFoundException("Location not found"));
+                accommodation.setLocation(location);
+
+                // Gán district từ DTO hoặc fallback sang Location
+                if (accommodationRequestDTO.getDistrict() != null && !accommodationRequestDTO.getDistrict().isBlank()) {
+                        accommodation.setDistrict(accommodationRequestDTO.getDistrict());
+                } else {
+                        accommodation.setDistrict(location.getDistrictName());
                 }
+
+                // Gán city từ DTO hoặc fallback sang Location
+                if (accommodationRequestDTO.getCity() != null && !accommodationRequestDTO.getCity().isBlank()) {
+                        accommodation.setCity(accommodationRequestDTO.getCity());
+                } else {
+                        accommodation.setCity(location.getProvinceName());
+                }
+
+                // Xử lý tọa độ với fallback từ Location
+                Double lat = accommodationRequestDTO.getLatitude() != null ? accommodationRequestDTO.getLatitude()
+                                : location.getLatitude();
+                Double lng = accommodationRequestDTO.getLongitude() != null ? accommodationRequestDTO.getLongitude()
+                                : location.getLongitude();
+                accommodation.setLatitude(lat);
+                accommodation.setLongitude(lng);
+
+                if (lat != null && lng != null) {
+                        String geoHash = GeoHash.encodeHash(lat, lng, 12);
+                        accommodation.setGeohash(geoHash);
+                } else if (location.getGeoHash() != null) {
+                        accommodation.setGeohash(location.getGeoHash());
+                }
+
+                if (accommodationRequestDTO.getImage() != null && !accommodationRequestDTO.getImage().isBlank()) {
+                        String oldImage = accommodation.getImage();
+                        if (oldImage != null && !oldImage.equals(accommodationRequestDTO.getImage())) {
+                                try {
+                                        fileUploadService.deleteFile(oldImage);
+                                } catch (Exception ignored) {
+                                }
+                        }
+                        accommodation.setImage(accommodationRequestDTO.getImage());
+                }
+
                 accommodation.setType(accommodationRequestDTO.getType());
-                accommodation.setLocation(locationRepository.findById(accommodationRequestDTO.getLocationId())
-                                .orElseThrow(() -> new NotFoundException("Location not found")));
-
-                String geoHash = GeoHash.encodeHash(accommodationRequestDTO.getLatitude(),
-                                accommodationRequestDTO.getLongitude(), 12);
-
-                accommodation.setGeohash(geoHash);
 
                 accommodationRepository.save(accommodation);
 
@@ -251,9 +299,9 @@ public class AccommodationService {
                                 .latitude(accommodation.getLatitude())
                                 .longitude(accommodation.getLongitude())
                                 .image(accommodation.getImage())
-                                .type(accommodation.getType().getDescription())
+                                .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                 .isFavorite(isFavorite)
-                                .locationId(accommodation.getLocation().getLocationId());
+                                .locationId(accommodation.getLocation() != null ? accommodation.getLocation().getLocationId() : null);
 
                 Double starRating = 0.0;
                 List<RoomTypeSummaryDTO> roomTypeSummaries = new ArrayList<>();
