@@ -1,20 +1,13 @@
 package com.example.hotelbooking.service;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.hotelbooking.dto.fileupload.FileUploadResponseDTO;
-import com.example.hotelbooking.exception.customer.NotFoundException;
+import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.UploadedFile;
 import com.example.hotelbooking.repository.UploadedFileRepository;
 
@@ -40,7 +33,7 @@ public class FileUploadService {
 
     private final UploadedFileRepository uploadedFileRepository;
 
-    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(FileUploadService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileUploadService.class);
 
     @Transactional
     public FileUploadResponseDTO uploadFileToCloudinary(MultipartFile file) throws IOException {
@@ -55,16 +48,13 @@ public class FileUploadService {
 
         UploadedFile uploadedFile = new UploadedFile();
         uploadedFile.setFileUrl(fileUploadResponseDTO.getFilePath());
-        uploadedFile.setExpireAt(System.currentTimeMillis() +
-                TimeUnit.HOURS.toMillis(1));
-
+        uploadedFile.setExpireAt(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
         uploadedFile.setFileType((String) uploadResult.get("resource_type"));
         uploadedFile.setPublicId((String) uploadResult.get("public_id"));
 
         uploadedFileRepository.save(uploadedFile);
 
         return fileUploadResponseDTO;
-
     }
 
     @Transactional
@@ -96,13 +86,11 @@ public class FileUploadService {
 
     @Transactional
     public boolean deleteFile(String fileUrl) {
-
         UploadedFile uploadedFile = uploadedFileRepository.findByFileUrl(fileUrl)
                 .orElseThrow(() -> new NotFoundException("File Not Found"));
 
         uploadedFileRepository.delete(uploadedFile);
         return true;
-
     }
 
     @Transactional
@@ -149,5 +137,4 @@ public class FileUploadService {
         }
         return null;
     }
-
 }

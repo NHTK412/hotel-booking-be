@@ -1,31 +1,34 @@
 package com.example.hotelbooking.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.function.EntityResponse;
-
-import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
-import com.example.hotelbooking.dto.accommodation.AccommodationRequestDTO;
-import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
-import com.example.hotelbooking.enums.AccommodationTypeEnum;
-import com.example.hotelbooking.security.CustomerUserDetails;
-import com.example.hotelbooking.service.AccommodationService;
-import com.example.hotelbooking.util.ApiResponse;
-
 import java.util.List;
 
-import org.springframework.context.annotation.Role;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
+import com.example.hotelbooking.dto.accommodation.AccommodationRequestDTO;
+import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
+import com.example.hotelbooking.enums.AccommodationTypeEnum;
+import com.example.hotelbooking.security.CustomUserDetails;
+import com.example.hotelbooking.service.AccommodationService;
+import com.example.hotelbooking.util.ApiResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "2. Khách Sạn & Chỗ Nghỉ (Accommodations)", description = "Các API tra cứu danh sách chỗ nghỉ, xem chi tiết phòng, tìm kiếm khách sạn gần nhất và quản lý khách sạn")
 @RestController
 @RequestMapping("/accommodations")
 public class AccommodationController {
@@ -36,65 +39,60 @@ public class AccommodationController {
                 this.accommodationService = accommodationService;
         }
 
-        @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+        @Operation(summary = "Lấy danh sách khách sạn (Công khai)", description = "Truy xuất danh sách khách sạn có phân trang, lọc theo loại hình (Khách sạn, Resort, Villa...), địa điểm và đánh giá sao")
         @GetMapping
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(
                         @RequestParam(defaultValue = "0") Integer page,
                         @RequestParam(defaultValue = "10") Integer size,
                         @RequestParam(required = false) AccommodationTypeEnum type,
                         @RequestParam(required = false) Long locationId,
-                        // Sắp xếp theo số sao
-                        @RequestParam(required = false) Boolean sortBy
-
-        ) {
-                // return new String();
-                // return "Hello World";
+                        @RequestParam(required = false) Boolean sortBy) {
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
-                                .getAllAccommodation(org.springframework.data.domain.PageRequest.of(page, size), type,
-                                                locationId, sortBy);
+                                .getAllAccommodation(PageRequest.of(page, size), type, locationId, sortBy);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
-                                "Accommodations fetched successfully",
+                                "Lấy danh sách khách sạn thành công",
                                 accommodationSummaryDTOs);
 
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+        @Operation(summary = "Xem chi tiết khách sạn (Công khai / Khách hàng)", description = "Lấy thông tin chi tiết của một khách sạn theo ID bao gồm các loại phòng, tiện nghi, hình ảnh và trạng thái yêu thích")
         @GetMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> getAccommodationById(
-                        @AuthenticationPrincipal CustomerUserDetails userDetails,
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
                         @PathVariable Long accommodationId) {
 
-
-                                final String providerId = userDetails.getUsername();
+                final String providerId = userDetails != null ? userDetails.getUsername() : null;
 
                 AccommodationDetailDTO accommodationDetailDTO = accommodationService
                                 .getAccommodationById(providerId, accommodationId);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Accommodation fetched successfully",
+                                "Lấy thông tin khách sạn thành công",
                                 accommodationDetailDTO);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Thêm mới khách sạn (Chỉ dành cho Admin)", description = "Tạo mới một khách sạn/chỗ nghỉ trong hệ thống")
         @PreAuthorize("hasAnyRole('ADMIN')")
         @PostMapping
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> createAccommodation(
-                        @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
+                        @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
 
                 AccommodationDetailDTO createdAccommodation = accommodationService
                                 .createAccommodation(accommodationRequestDTO);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Accommodation created successfully",
+                                "Tạo mới khách sạn thành công",
                                 createdAccommodation);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Xóa khách sạn (Admin & Host)", description = "Xóa mềm khách sạn theo ID")
         @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
         @DeleteMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> deleteAccommodation(
@@ -104,54 +102,54 @@ public class AccommodationController {
                                 .deleteAccommodation(accommodationId);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Accommodation deleted successfully",
+                                "Xóa khách sạn thành công",
                                 deletedAccommodation);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Cập nhật thông tin khách sạn (Admin & Host)", description = "Chỉnh sửa tên, mô tả, địa chỉ, hình ảnh và tiện ích của khách sạn")
         @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
         @PutMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> updateAccommodation(
                         @PathVariable Long accommodationId,
-                        @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
+                        @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
 
                 AccommodationDetailDTO updatedAccommodation = accommodationService
                                 .updateAccommodation(accommodationId, accommodationRequestDTO);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Accommodation updated successfully",
+                                "Cập nhật khách sạn thành công",
                                 updatedAccommodation);
 
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('USER')")
+        @Operation(summary = "Lấy danh sách khách sạn yêu thích (Khách hàng)", description = "Xem danh sách các khách sạn mà khách hàng hiện tại đã đánh dấu yêu thích")
+        @PreAuthorize("hasAnyRole('CUSTOMER')")
         @GetMapping("/favorite")
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllByFavorite(
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @RequestParam(defaultValue = "0") Integer page,
                         @RequestParam(defaultValue = "10") Integer size) {
-                // return new String();
-                // return "Hello World";
 
                 String providerId = customerUserDetails.getUsername();
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
-                                .getAllByFavorite(org.springframework.data.domain.PageRequest.of(page, size),
-                                                providerId);
+                                .getAllByFavorite(PageRequest.of(page, size), providerId);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
-                                "Accommodations fetched successfully",
+                                "Lấy danh sách yêu thích thành công",
                                 accommodationSummaryDTOs);
 
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('USER')")
+        @Operation(summary = "Thêm/Hủy đánh dấu khách sạn yêu thích (Khách hàng)", description = "Bật hoặc tắt trạng thái yêu thích cho một khách sạn cụ thể")
+        @PreAuthorize("hasAnyRole('CUSTOMER')")
         @PutMapping("/favorite/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> updateFavoriteAccommodation(
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
                         @PathVariable Long accommodationId,
                         @RequestParam(required = true, defaultValue = "false") Boolean isFavorite) {
 
@@ -161,16 +159,15 @@ public class AccommodationController {
                                 .updateFavoriteAccommodation(providerId, accommodationId, isFavorite);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Accommodation updated successfully",
+                                "Cập nhật trạng thái yêu thích thành công",
                                 updatedAccommodation);
 
                 return ResponseEntity.ok(response);
         }
 
-        @PreAuthorize("hasAnyRole('USER')")
+        @Operation(summary = "Tìm khách sạn gần đây theo tọa độ (Công khai)", description = "Tìm kiếm các chỗ nghỉ gần vị trí người dùng bằng thuật toán GeoHash dựa trên Vĩ độ (Latitude) và Kinh độ (Longitude)")
         @GetMapping("/nearby")
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getNearbyAccommodations(
-                        @AuthenticationPrincipal CustomerUserDetails customerUserDetails,
                         @RequestParam Double latitude,
                         @RequestParam Double longitude,
                         @RequestParam(required = false, defaultValue = "5") Integer precision,
@@ -180,12 +177,13 @@ public class AccommodationController {
                                 .findNearbyAccommodations(latitude, longitude, precision, type);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
-                                "Nearby accommodations fetched successfully",
+                                "Tìm kiếm khách sạn gần nhất thành công",
                                 nearbyAccommodations);
 
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Tìm kiếm khách sạn theo từ khóa (Công khai)", description = "Tìm kiếm khách sạn theo tên hoặc mô tả có phân trang")
         @GetMapping("/search")
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> searchAccommodations(
                         @RequestParam String keyword,
@@ -193,16 +191,12 @@ public class AccommodationController {
                         @RequestParam(defaultValue = "10") Integer size) {
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
-                                .searchAccommodations(keyword,
-                                                org.springframework.data.domain.PageRequest.of(page, size));
+                                .searchAccommodations(keyword, PageRequest.of(page, size));
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
-
-                                "Accommodations fetched successfully",
+                                "Tìm kiếm khách sạn thành công",
                                 accommodationSummaryDTOs);
 
                 return ResponseEntity.ok(response);
-
         }
-
 }

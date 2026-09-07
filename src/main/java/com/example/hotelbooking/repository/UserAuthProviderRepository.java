@@ -1,5 +1,6 @@
 package com.example.hotelbooking.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,5 @@ public interface UserAuthProviderRepository extends JpaRepository<UserAuthProvid
 
     Optional<UserAuthProvider> findByProviderUserId(String providerUserId);
 
-    
-
+    List<UserAuthProvider> findByUser_Id(Long userId);
 }

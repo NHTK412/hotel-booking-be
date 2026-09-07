@@ -2,7 +2,6 @@ package com.example.hotelbooking.model;
 
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 
-import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,7 +23,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccommodationStaff extends Base {
+public class AccommodationStaff extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,9 +36,9 @@ public class AccommodationStaff extends Base {
 
     @ManyToOne
     @JoinColumn(name = "accommodationId")
-    private Accommodations accommodation;
+    private Accommodation accommodation;
 
     @ManyToOne
     @JoinColumn(name = "userId")
-    private Users user;
+    private User user;
 }

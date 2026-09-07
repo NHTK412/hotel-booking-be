@@ -1,11 +1,13 @@
 package com.example.hotelbooking.model;
 
-import jakarta.annotation.Generated;
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,12 +16,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "locations")
+@Table(name = "locations", indexes = {
+    @Index(name = "idx_location_geohash", columnList = "geoHash"),
+    @Index(name = "idx_location_district_province", columnList = "districtName, provinceName")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Location extends Base {
+public class Location extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,17 +49,6 @@ public class Location extends Base {
     @Column(name = "geoHash", length = 12)
     private String geoHash; // Mã GeoHash của tọa độ trung tâm
 
-
     @OneToMany(mappedBy = "location")
-    private java.util.List<Accommodations> accommodations;
-
+    private List<Accommodation> accommodations;
 }
-
-// CREATE TABLE Locations (
-// locationId SERIAL PRIMARY KEY,
-// provinceName VARCHAR(100), -- Ví dụ: Hồ Chí Minh
-// districtName VARCHAR(100), -- Ví dụ: Quận 1
-// searchVector TEXT, -- Cột tổng hợp để search nhanh: "Quận 1, Hồ Chí Minh"
-// latitude DOUBLE PRECISION, -- Tọa độ trung tâm của Quận (rất quan trọng)
-// longitude DOUBLE PRECISION
-// );

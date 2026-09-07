@@ -1,18 +1,19 @@
 package com.example.hotelbooking.service;
 
-import java.io.File;
-
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
+import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
-import com.example.hotelbooking.exception.customer.NotFoundException;
+import com.example.hotelbooking.exception.NotFoundException;
+import com.example.hotelbooking.model.Accommodation;
 import com.example.hotelbooking.model.AccommodationStaff;
-import com.example.hotelbooking.model.Accommodations;
+import com.example.hotelbooking.model.User;
 import com.example.hotelbooking.model.UserAuthProvider;
-import com.example.hotelbooking.model.Users;
 import com.example.hotelbooking.repository.AccommodationRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
@@ -20,30 +21,30 @@ import com.example.hotelbooking.repository.UserRepository;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class UserService {
 
         @Value("${account.default.password}")
         private String defaultPassword;
 
         private final UserRepository userRepository;
-
         private final UserAuthProviderRepository userAuthProviderRepository;
-
         private final AccommodationRepository accommodationRepository;
-
         private final FileUploadService fileUploadService;
+        private final PasswordEncoder passwordEncoder;
 
         public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository,
-                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService) {
+                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService,
+                        PasswordEncoder passwordEncoder) {
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
                 this.accommodationRepository = accommodationRepository;
                 this.fileUploadService = fileUploadService;
+                this.passwordEncoder = passwordEncoder;
         }
 
         public UserResponseDTO getUserById(Long userId) {
-
-                Users user = userRepository.findById(userId)
+                User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new NotFoundException("User not found"));
 
                 return UserResponseDTO.builder()
@@ -52,19 +53,17 @@ public class UserService {
                                 .email(user.getEmail())
                                 .phone(user.getPhone())
                                 .birthday(user.getBirthday())
-                                .gender(user.getGender().getDisplayName())
+                                .gender(user.getGender() != null ? user.getGender().getDisplayName() : null)
                                 .address(user.getAddress())
                                 .avatarUrl(user.getAvatarUrl())
                                 .build();
-
         }
 
         public UserResponseDTO getUserByProviderId(String providerId) {
-
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-                Users user = userAuthProvider.getUser();
+                User user = userAuthProvider.getUser();
 
                 return UserResponseDTO.builder()
                                 .id(user.getId())
@@ -72,36 +71,35 @@ public class UserService {
                                 .email(user.getEmail())
                                 .phone(user.getPhone())
                                 .birthday(user.getBirthday())
-                                .gender(user.getGender().getDisplayName())
+                                .gender(user.getGender() != null ? user.getGender().getDisplayName() : null)
                                 .address(user.getAddress())
                                 .avatarUrl(user.getAvatarUrl())
                                 .build();
         }
 
-        public UserResponseDTO updateUserByProviderId(String providerId,
-                        com.example.hotelbooking.dto.user.UserReqquestDTO userReqquestDTO) {
-
+        public UserResponseDTO updateUserByProviderId(String providerId, UserRequestDTO userRequestDTO) {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-                Users user = userAuthProvider.getUser();
+                User user = userAuthProvider.getUser();
 
-                user.setName(userReqquestDTO.getName());
-                user.setEmail(userReqquestDTO.getEmail());
-                user.setPhone(userReqquestDTO.getPhone());
-                user.setBirthday(userReqquestDTO.getBirthday());
-                user.setGender(userReqquestDTO.getGender());
-                user.setAddress(userReqquestDTO.getAddress());
+                user.setName(userRequestDTO.getName());
+                user.setEmail(userRequestDTO.getEmail());
+                user.setPhone(userRequestDTO.getPhone());
+                user.setBirthday(userRequestDTO.getBirthday());
+                user.setGender(userRequestDTO.getGender());
+                user.setAddress(userRequestDTO.getAddress());
+
                 if (user.getAvatarUrl() != null) {
                         fileUploadService.deleteFileByPublicId(user.getAvatarUrl());
                 }
 
-                if (userReqquestDTO.getAvatarUrl() != null) {
-                        user.setAvatarUrl(userReqquestDTO.getAvatarUrl());
+                if (userRequestDTO.getAvatarUrl() != null) {
+                        user.setAvatarUrl(userRequestDTO.getAvatarUrl());
                         fileUploadService.deleteFile(user.getAvatarUrl());
                 }
 
-                Users updatedUser = userRepository.save(user);
+                User updatedUser = userRepository.save(user);
 
                 return UserResponseDTO.builder()
                                 .id(updatedUser.getId())
@@ -109,17 +107,15 @@ public class UserService {
                                 .email(updatedUser.getEmail())
                                 .phone(updatedUser.getPhone())
                                 .birthday(updatedUser.getBirthday())
-                                .gender(updatedUser.getGender().getDisplayName())
+                                .gender(updatedUser.getGender() != null ? updatedUser.getGender().getDisplayName() : null)
                                 .address(updatedUser.getAddress())
                                 .avatarUrl(updatedUser.getAvatarUrl())
-
                                 .build();
         }
 
         @Transactional
-        public UserResponseDTO registerHost(com.example.hotelbooking.dto.user.CreateHostDTO createHostDTO) {
-                Users user = new Users();
-
+        public UserResponseDTO registerHost(CreateHostDTO createHostDTO) {
+                User user = new User();
                 user.setName(createHostDTO.getName());
                 user.setEmail(createHostDTO.getEmail());
                 user.setPhone(createHostDTO.getPhone());
@@ -135,17 +131,15 @@ public class UserService {
                 user.setRole(UserRoleEnum.ROLE_HOST);
 
                 UserAuthProvider authProvider = new UserAuthProvider();
-                authProvider.setType(com.example.hotelbooking.enums.AuthProviderTypeEnum.LOCAL);
+                authProvider.setType(AuthProviderTypeEnum.LOCAL);
                 authProvider.setProviderUserId(createHostDTO.getEmail());
 
-                BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
                 String encodedPassword = passwordEncoder.encode(defaultPassword);
 
                 authProvider.setPassword(encodedPassword);
-
                 authProvider.setUser(user);
 
-                Accommodations accommodation = accommodationRepository.findById(createHostDTO.getAccommodationId())
+                Accommodation accommodation = accommodationRepository.findById(createHostDTO.getAccommodationId())
                                 .orElseThrow(() -> new NotFoundException("Accommodation not found"));
 
                 AccommodationStaff accommodationStaff = new AccommodationStaff();
@@ -155,7 +149,7 @@ public class UserService {
 
                 user.getAccommodationStaffs().add(accommodationStaff);
 
-                Users savedUser = userRepository.save(user);
+                User savedUser = userRepository.save(user);
 
                 return UserResponseDTO.builder()
                                 .id(savedUser.getId())
@@ -163,10 +157,9 @@ public class UserService {
                                 .email(savedUser.getEmail())
                                 .phone(savedUser.getPhone())
                                 .birthday(savedUser.getBirthday())
-                                .gender(savedUser.getGender().getDisplayName())
+                                .gender(savedUser.getGender() != null ? savedUser.getGender().getDisplayName() : null)
                                 .address(savedUser.getAddress())
                                 .avatarUrl(savedUser.getAvatarUrl())
                                 .build();
-
         }
 }
