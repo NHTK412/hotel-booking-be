@@ -103,13 +103,38 @@ public class LocationService {
         Location location = locationRepository.findById(locationId)
                 .orElseThrow(() -> new NotFoundException("Location not found"));
 
+        return mapToDTO(location);
+    }
+
+    public List<String> getAllProvinces() {
+        return locationRepository.findAllDistinctProvinces();
+    }
+
+    public List<LocationResponseDTO> getDistrictsByProvince(String provinceName) {
+        if (provinceName == null || provinceName.trim().isEmpty()) {
+            return List.of();
+        }
+        List<Location> locations = locationRepository.findByProvinceNameIgnoreCase(provinceName.trim());
+        return locations.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    public List<LocationResponseDTO> getAllLocations() {
+        List<Location> locations = locationRepository.findAllOrdered();
+        return locations.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    private LocationResponseDTO mapToDTO(Location l) {
         return LocationResponseDTO.builder()
-                .locationId(location.getLocationId())
-                .provinceName(location.getProvinceName())
-                .districtName(location.getDistrictName())
-                .latitude(location.getLatitude())
-                .longitude(location.getLongitude())
-                .searchVector(location.getSearchVector())
+                .locationId(l.getLocationId())
+                .provinceName(l.getProvinceName())
+                .districtName(l.getDistrictName())
+                .latitude(l.getLatitude())
+                .longitude(l.getLongitude())
+                .searchVector(l.getSearchVector())
                 .build();
     }
 }

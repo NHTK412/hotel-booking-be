@@ -36,4 +36,14 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
             SELECT l FROM Location l WHERE l.geoHash LIKE :prefix%
             """)
     List<Location> findNearby(@Param("prefix") String prefix);
+
+    @Query("SELECT DISTINCT l.provinceName FROM Location l WHERE l.provinceName IS NOT NULL AND TRIM(l.provinceName) != '' ORDER BY l.provinceName ASC")
+    List<String> findAllDistinctProvinces();
+
+    @Query("SELECT l FROM Location l WHERE LOWER(l.provinceName) = LOWER(:provinceName) ORDER BY l.districtName ASC")
+    List<Location> findByProvinceNameIgnoreCase(@Param("provinceName") String provinceName);
+
+    @Query("SELECT l FROM Location l ORDER BY l.provinceName ASC, l.districtName ASC")
+    List<Location> findAllOrdered();
 }
+

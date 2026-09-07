@@ -87,4 +87,26 @@ public class LocationController {
 
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Lấy danh sách tất cả các Tỉnh / Thành phố (Công khai)", description = "Truy xuất danh sách tên các tỉnh/thành phố duy nhất trong CSDL phục vụ Dropdown chọn tỉnh/thành")
+    @GetMapping("/provinces")
+    public ResponseEntity<ApiResponse<List<String>>> getAllProvinces() {
+        List<String> provinces = locationService.getAllProvinces();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách tỉnh/thành phố thành công", provinces));
+    }
+
+    @Operation(summary = "Lấy danh sách Quận / Huyện theo Tỉnh / Thành phố (Công khai)", description = "Truy xuất danh sách quận/huyện thuộc một tỉnh/thành phố cụ thể kèm locationId và tọa độ")
+    @GetMapping("/districts")
+    public ResponseEntity<ApiResponse<List<LocationResponseDTO>>> getDistrictsByProvince(
+            @RequestParam String province) {
+        List<LocationResponseDTO> districts = locationService.getDistrictsByProvince(province);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách quận/huyện thành công", districts));
+    }
+
+    @Operation(summary = "Lấy toàn bộ danh sách địa điểm (Công khai)", description = "Truy xuất tất cả các địa điểm hành chính được sắp xếp theo Tỉnh/Thành và Quận/Huyện")
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<LocationResponseDTO>>> getAllLocations() {
+        List<LocationResponseDTO> locations = locationService.getAllLocations();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy toàn bộ danh sách địa điểm thành công", locations));
+    }
 }
