@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "locations")
+@Table(name = "locations", indexes = {
+    @Index(name = "idx_location_geohash", columnList = "geoHash"),
+    @Index(name = "idx_location_district_province", columnList = "districtName, provinceName")
+})
 @Getter
 @Setter
 @NoArgsConstructor

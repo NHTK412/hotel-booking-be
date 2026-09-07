@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -13,7 +14,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "device")
+@Table(name = "device", indexes = {
+    @Index(name = "idx_device_user", columnList = "userId"),
+    @Index(name = "idx_device_type", columnList = "deviceType")
+})
 @Getter
 @Setter
 @AllArgsConstructor

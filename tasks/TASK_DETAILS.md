@@ -175,7 +175,8 @@
     })
     ```
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Khi chạy `EXPLAIN` câu lệnh query tìm kiếm, MySQL/PostgreSQL sử dụng Index thay vì Full Table Scan (`ALL`).
+  - [x] Đã bổ sung Composite Indexes và Single-column Indexes trên toàn bộ 10 JPA Entities (`Bookings`, `Accommodations`, `RoomTypes`, `Rooms`, `UserAuthProvider`, `Reviews`, `Locations`, `Payments`, `Users`, `Devices`) bao phủ các câu query tìm kiếm, filter theo status/isDeleted/dates, foreign key joins, và auth lookups.
+  - [x] Đã kiểm thử schema generation và test suite thành công (`BUILD SUCCESS`).
 
 ---
 

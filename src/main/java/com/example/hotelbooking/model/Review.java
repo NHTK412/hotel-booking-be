@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -15,7 +16,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Reviews")
+@Table(name = "Reviews", indexes = {
+    @Index(name = "idx_review_roomtype_created", columnList = "roomtypeId, createAt"),
+    @Index(name = "idx_review_booking", columnList = "bookingId"),
+    @Index(name = "idx_review_user", columnList = "userId")
+})
 @AllArgsConstructor
 @NoArgsConstructor 
 @Getter

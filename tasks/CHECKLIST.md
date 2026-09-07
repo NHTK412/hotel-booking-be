@@ -9,10 +9,10 @@
 | Phase | Số Lượng Task | Trạng Thái | Hoàn Thành |
 | :--- | :---: | :---: | :---: |
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
-| **Phase 2: Performance & Concurrency** | 3 tasks | 🔄 In Progress | `2 / 3` |
+| **Phase 2: Performance & Concurrency** | 3 tasks | ✅ Hoàn thành | `3 / 3` |
 | **Phase 3: Security & Validation** | 4 tasks | ⏳ Sẵn sàng | `0 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`8 / 15` (53.3%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`9 / 15` (60.0%)** |
 
 ---
 
@@ -71,11 +71,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-07 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-07-x%C3%B3a-b%E1%BB%8F-in-memory-processing-cho-c%C3%A1c-api-th%E1%BB%91ng-k%C3%AA--b%C3%A1o-c%C3%A1o)
 
-- [ ] **[TASK-08]** Đánh Index tối ưu hiệu năng truy vấn cho các bảng cơ sở dữ liệu.
+- [x] **[TASK-08]** Đánh Index tối ưu hiệu năng truy vấn cho các bảng cơ sở dữ liệu.
   - **Priority**: 🟡 `MEDIUM`
   - **Estimate**: `30 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-08 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-08-%C4%91%C3%A1nh-index-cho-database-indexing-strategy)
 
 ---

@@ -11,6 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -23,7 +24,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Accommodations")
+@Table(name = "Accommodations", indexes = {
+    @Index(name = "idx_accommodation_geohash", columnList = "geohash"),
+    @Index(name = "idx_accommodation_location_deleted", columnList = "locationId, isDeleted"),
+    @Index(name = "idx_accommodation_type_deleted", columnList = "type, isDeleted")
+})
 @Getter
 @Setter
 @NoArgsConstructor

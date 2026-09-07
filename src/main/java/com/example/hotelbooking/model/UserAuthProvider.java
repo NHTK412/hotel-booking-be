@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -19,7 +20,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "UserAuthProvider")
+@Table(name = "UserAuthProvider", indexes = {
+    @Index(name = "idx_uap_provider_user_id", columnList = "providerUserId"),
+    @Index(name = "idx_uap_type_provider_user", columnList = "type, providerUserId"),
+    @Index(name = "idx_uap_user_id", columnList = "userId")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

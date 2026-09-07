@@ -13,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -24,7 +25,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Bookings")
+@Table(name = "Bookings", indexes = {
+    @Index(name = "idx_booking_room_status_dates", columnList = "roomId, status, checkInAt, checkOutAt"),
+    @Index(name = "idx_booking_user_status", columnList = "userId, status"),
+    @Index(name = "idx_booking_status_expired", columnList = "status, expiredAt"),
+    @Index(name = "idx_booking_dates", columnList = "checkInAt, checkOutAt")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

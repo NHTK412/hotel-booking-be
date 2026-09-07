@@ -14,6 +14,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -24,7 +25,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "RoomTypes")
+@Table(name = "RoomTypes", indexes = {
+    @Index(name = "idx_roomtype_accommodation_deleted", columnList = "accommodationId, isDeleted"),
+    @Index(name = "idx_roomtype_capacity_bedroom", columnList = "capacity, bedroom")
+})
 @Getter
 @Setter
 @NoArgsConstructor
