@@ -38,6 +38,9 @@ import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 import com.example.hotelbooking.security.jwt.JwtUtil;
 
+import org.mockito.Spy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
@@ -49,6 +52,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtUtil jwtUtil;
+
+    @Spy
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Mock
     private RedisTemplate<String, String> redisTemplate;

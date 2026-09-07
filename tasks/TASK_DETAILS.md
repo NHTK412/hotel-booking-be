@@ -214,7 +214,9 @@
     ```
   - Thay thế toàn bộ `new BCryptPasswordEncoder()` trong `AuthService`, `UserService`, `DataInitializer` bằng Dependency Injection.
 - **Tiêu chí nghiệm thu (Acceptance Criteria)**:
-  - [ ] Khởi động ứng dụng không có cảnh báo khởi tạo thủ công, mã hóa mật khẩu diễn ra đồng nhất.
+  - [x] Đã định nghĩa `@Bean public PasswordEncoder passwordEncoder()` trong `SecurityConfig.java`.
+  - [x] Đã thay thế toàn bộ các lời gọi `new BCryptPasswordEncoder()` thủ công trong `AuthService`, `UserService`, `DataInitializer` bằng cơ chế Dependency Injection chuẩn của Spring Boot.
+  - [x] Toàn bộ test suite chạy thành công không có lỗi (`BUILD SUCCESS`).
 
 ---
 

@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.json.JSONObject;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.codec.Hex;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.google.firebase.FirebaseApp;
@@ -43,6 +43,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserAuthProviderRepository userAuthProviderRepository;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom = new SecureRandom();
     private final RedisTemplate<String, String> redisTemplate;
     private final MailService mailService;
@@ -51,11 +52,13 @@ public class AuthService {
             UserRepository userRepository,
             UserAuthProviderRepository userAuthProviderRepository,
             JwtUtil jwtUtil,
+            PasswordEncoder passwordEncoder,
             RedisTemplate<String, String> redisTemplate,
             MailService mailService) {
         this.userRepository = userRepository;
         this.userAuthProviderRepository = userAuthProviderRepository;
         this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
         this.redisTemplate = redisTemplate;
         this.mailService = mailService;
     }
@@ -72,7 +75,6 @@ public class AuthService {
             throw new InvalidCredentialsException("User account is inactive");
         }
 
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         if (!passwordEncoder.matches(loginDTO.getPassword(), userAuthProvider.getPassword())) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
@@ -227,8 +229,7 @@ public class AuthService {
         userAuthProvider.setType(AuthProviderTypeEnum.LOCAL);
         userAuthProvider.setProviderUserId(registerDTO.getEmail());
 
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        userAuthProvider.setPassword(encoder.encode(registerDTO.getPassword()));
+        userAuthProvider.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         userAuthProvider.setUser(newUser);
 
         userAuthProviderRepository.save(userAuthProvider);
@@ -364,8 +365,7 @@ public class AuthService {
                 .findByTypeAndProviderUserId(AuthProviderTypeEnum.LOCAL, email)
                 .orElseThrow(() -> new InvalidCredentialsException("Email not registered"));
 
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        String code = encoder.encode(newPassword);
+        String code = passwordEncoder.encode(newPassword);
 
         userAuthProvider.setPassword(code);
         userAuthProviderRepository.save(userAuthProvider);

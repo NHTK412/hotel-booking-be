@@ -10,9 +10,9 @@
 | :--- | :---: | :---: | :---: |
 | **Phase 1: Critical Bug Fixes & Logic** | 5 tasks | ✅ Hoàn thành | `5 / 5` |
 | **Phase 2: Performance & Concurrency** | 3 tasks | ✅ Hoàn thành | `3 / 3` |
-| **Phase 3: Security & Validation** | 4 tasks | 🔄 In Progress | `1 / 4` |
+| **Phase 3: Security & Validation** | 4 tasks | 🔄 In Progress | `2 / 4` |
 | **Phase 4: Testing, Docs & DevOps** | 3 tasks | 🔄 In Progress | `1 / 3` |
-| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`10 / 15` (66.7%)** |
+| **TỔNG CỘNG** | **15 tasks** | **IN PROGRESS** | **`11 / 15` (73.3%)** |
 
 ---
 
@@ -89,11 +89,11 @@
   - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-09 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-09-tri%E1%BB%83n-khai-c%C6%A1-ch%E1%BA%BF-refresh-token--token-rotation)
 
-- [ ] **[TASK-10]** Chuẩn hóa `PasswordEncoder` thành Spring Bean dùng chung.
+- [x] **[TASK-10]** Chuẩn hóa `PasswordEncoder` thành Spring Bean dùng chung.
   - **Priority**: 🟢 `LOW`
   - **Estimate**: `15 mins`
   - **Assignee**: Backend Engineer
-  - **Status**: `TODO`
+  - **Status**: `COMPLETED` ✅
   - **Chi tiết**: Xem [TASK-10 trong TASK_DETAILS.md](file:///d:/Programming_Language/Project_CV/Hotel_Booking/hotel-booking-be/tasks/TASK_DETAILS.md#task-10-chu%E1%BA%A9n-h%C3%B3a-passwordencoder-th%C3%A0nh-spring-bean)
 
 - [ ] **[TASK-11]** Tích hợp `spring-boot-starter-validation` và validate dữ liệu DTO đầu vào.

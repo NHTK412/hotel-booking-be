@@ -15,9 +15,17 @@ import com.example.hotelbooking.security.handler.CustomAccessDeniedHandler;
 import com.example.hotelbooking.security.handler.CustomAuthenticationEntryPoint;
 import com.example.hotelbooking.security.jwt.JwtAuthFilter;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
         private final CustomAuthenticationEntryPoint authenticationEntryPoint;
         private final CustomAccessDeniedHandler accessDeniedHandler;

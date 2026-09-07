@@ -1,7 +1,7 @@
 package com.example.hotelbooking.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
@@ -31,13 +31,16 @@ public class UserService {
         private final UserAuthProviderRepository userAuthProviderRepository;
         private final AccommodationRepository accommodationRepository;
         private final FileUploadService fileUploadService;
+        private final PasswordEncoder passwordEncoder;
 
         public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository,
-                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService) {
+                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService,
+                        PasswordEncoder passwordEncoder) {
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
                 this.accommodationRepository = accommodationRepository;
                 this.fileUploadService = fileUploadService;
+                this.passwordEncoder = passwordEncoder;
         }
 
         public UserResponseDTO getUserById(Long userId) {
@@ -131,7 +134,6 @@ public class UserService {
                 authProvider.setType(AuthProviderTypeEnum.LOCAL);
                 authProvider.setProviderUserId(createHostDTO.getEmail());
 
-                BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
                 String encodedPassword = passwordEncoder.encode(defaultPassword);
 
                 authProvider.setPassword(encodedPassword);
