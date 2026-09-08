@@ -15,11 +15,10 @@ public class AccommodationSummaryDTO {
     private String accommodationName;
     private String address;
     private String image;
-    // private AccommodationTypeEnum type;
     private Double averageRating;
     private Double minPricePerNight;
     private Double discountMinPricePerNight; // Giá đã giảm
-    private String type;
+    private AccommodationTypeEnum type;
 
     private Double lat;
     private Double lng;

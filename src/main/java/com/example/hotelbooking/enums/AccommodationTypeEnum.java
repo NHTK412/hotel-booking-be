@@ -1,11 +1,11 @@
 package com.example.hotelbooking.enums;
 
 public enum AccommodationTypeEnum {
-    HOTEL("Khách sạn"), // Khách sạn
-    HOSTEL("Nhà trọ"), // Nhà trọ
-    APARTMENT("Căn hộ"), // Căn hộ
-    HOMESTAY("Nhà ở"), // Nhà ở
-    RESORT("Khu nghỉ dưỡng"); // Khu nghỉ dưỡng
+    HOTEL("Khách sạn"),
+    HOSTEL("Nhà nghỉ thanh niên"),
+    APARTMENT("Căn hộ dịch vụ"),
+    HOMESTAY("Homestay"),
+    RESORT("Khu nghỉ dưỡng");
 
     private final String description;
 
