@@ -77,7 +77,7 @@ public class AccommodationController {
         }
 
         @Operation(summary = "Thêm mới khách sạn (Chỉ dành cho Admin)", description = "Tạo mới một khách sạn/chỗ nghỉ trong hệ thống")
-        @PreAuthorize("hasAnyRole('ADMIN')")
+        @PreAuthorize("hasRole('ADMIN')")
         @PostMapping
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> createAccommodation(
                         @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
@@ -92,8 +92,8 @@ public class AccommodationController {
                 return ResponseEntity.ok(response);
         }
 
-        @Operation(summary = "Xóa khách sạn (Admin & Host)", description = "Xóa mềm khách sạn theo ID")
-        @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+        @Operation(summary = "Khóa / Xóa mềm khách sạn (Chỉ dành cho Admin)", description = "Khóa hoặc xóa mềm khách sạn theo ID")
+        @PreAuthorize("hasRole('ADMIN')")
         @DeleteMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> deleteAccommodation(
                         @PathVariable Long accommodationId) {
@@ -102,21 +102,24 @@ public class AccommodationController {
                                 .deleteAccommodation(accommodationId);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
-                                "Xóa khách sạn thành công",
+                                "Khóa khách sạn thành công",
                                 deletedAccommodation);
 
                 return ResponseEntity.ok(response);
         }
 
-        @Operation(summary = "Cập nhật thông tin khách sạn (Admin & Host)", description = "Chỉnh sửa tên, mô tả, địa chỉ, hình ảnh và tiện ích của khách sạn")
-        @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+        @Operation(summary = "Cập nhật thông tin khách sạn (Chỉ dành cho Host)", description = "Chỉnh sửa tên, mô tả, địa chỉ, hình ảnh và tiện ích của khách sạn do Host quản lý")
+        @PreAuthorize("hasRole('HOST')")
         @PutMapping("/{accommodationId}")
         public ResponseEntity<ApiResponse<AccommodationDetailDTO>> updateAccommodation(
+                        @AuthenticationPrincipal CustomUserDetails userDetails,
                         @PathVariable Long accommodationId,
                         @Valid @RequestBody AccommodationRequestDTO accommodationRequestDTO) {
 
+                final String providerId = userDetails != null ? userDetails.getUsername() : null;
+
                 AccommodationDetailDTO updatedAccommodation = accommodationService
-                                .updateAccommodation(accommodationId, accommodationRequestDTO);
+                                .updateAccommodation(providerId, accommodationId, accommodationRequestDTO);
 
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
                                 "Cập nhật khách sạn thành công",

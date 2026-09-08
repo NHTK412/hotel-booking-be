@@ -23,6 +23,8 @@ import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 import com.github.davidmoten.geo.GeoHash;
 import com.example.hotelbooking.model.Location;
+import com.example.hotelbooking.model.AccommodationStaff;
+import org.springframework.security.access.AccessDeniedException;
 
 import jakarta.transaction.Transactional;
 
@@ -99,6 +101,8 @@ public class AccommodationService {
                                         .discountMinPricePerNight(discountMinPricePerNight)
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
+                                        .lat(accommodation.getLatitude())
+                                        .lng(accommodation.getLongitude())
                                         .build();
                 }).toList();
         }
@@ -219,8 +223,20 @@ public class AccommodationService {
 
         public AccommodationDetailDTO updateAccommodation(Long accommodationId,
                         AccommodationRequestDTO accommodationRequestDTO) {
+                return updateAccommodation(null, accommodationId, accommodationRequestDTO);
+        }
+
+        public AccommodationDetailDTO updateAccommodation(String providerId, Long accommodationId,
+                        AccommodationRequestDTO accommodationRequestDTO) {
                 Accommodation accommodation = accommodationRepository.findById(accommodationId)
                                 .orElseThrow(() -> new NotFoundException("Accommodation not found"));
+
+                // Nếu request từ Host, kiểm tra quyền sở hữu khách sạn
+                if (providerId != null && !providerId.isBlank()) {
+                        UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                        .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+                        ensureHostHasAccommodation(authProvider, accommodationId);
+                }
 
                 accommodation.setAccommodationName(accommodationRequestDTO.getAccommodationName());
                 accommodation.setDescription(accommodationRequestDTO.getDescription());
@@ -275,6 +291,22 @@ public class AccommodationService {
                 accommodationRepository.save(accommodation);
 
                 return convertToDetailDTO(accommodation, null);
+        }
+
+        private void ensureHostHasAccommodation(UserAuthProvider userAuthProvider, Long accommodationId) {
+                if (userAuthProvider.getUser() == null) {
+                        throw new AccessDeniedException("User account not found.");
+                }
+
+                List<AccommodationStaff> staffAssignments = userAuthProvider.getUser().getAccommodationStaffs();
+
+                boolean hasAccess = staffAssignments != null && staffAssignments.stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .anyMatch(id -> id.equals(accommodationId));
+
+                if (!hasAccess) {
+                        throw new AccessDeniedException("Bạn không có quyền quản trị hoặc chỉnh sửa cơ sở lưu trú này.");
+                }
         }
 
         private AccommodationDetailDTO convertToDetailDTO(Accommodation accommodation) {
