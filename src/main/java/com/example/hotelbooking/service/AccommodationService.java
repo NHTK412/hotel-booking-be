@@ -50,18 +50,25 @@ public class AccommodationService {
 
         public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
                         Long locationId, Boolean sortBy) {
+                return getAllAccommodation(pageable, type, locationId, sortBy, false);
+        }
+
+        public List<AccommodationSummaryDTO> getAllAccommodation(Pageable pageable, AccommodationTypeEnum type,
+                        Long locationId, Boolean sortBy, Boolean includeDeleted) {
+
+                boolean incDel = includeDeleted != null && includeDeleted;
 
                 List<Accommodation> accommodations = (sortBy != null && sortBy)
                                 ? accommodationRepository
-                                                .findByLocationIdAndTypeSortedByStar(
+                                                .findWithFiltersSortedByStar(
                                                                 locationId,
-                                                                type, pageable)
+                                                                type, incDel, pageable)
                                                 .getContent()
                                 : accommodationRepository
-                                                .findByIsDeletedFalseAndLocationId(
+                                                .findWithFilters(
                                                                 pageable,
                                                                 locationId,
-                                                                type)
+                                                                type, incDel)
                                                 .getContent();
 
                 return accommodations.stream().map(accommodation -> {
@@ -71,26 +78,31 @@ public class AccommodationService {
                         Double discountMinPricePerNight = Double.MAX_VALUE;
                         Double finalMinPrice = Double.MAX_VALUE;
 
-                        for (RoomType room : accommodation.getRooms()) {
-                                if (room.getIsDeleted()) {
-                                        continue;
+                        if (accommodation.getRooms() != null) {
+                                for (RoomType room : accommodation.getRooms()) {
+                                        if (room.getIsDeleted()) {
+                                                continue;
+                                        }
+                                        averageRating += room.getStar();
+
+                                        Double roomPrice = room.getPrice();
+                                        Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
+
+                                        Double finalPrice = roomPrice - (roomPrice * discount / 100);
+
+                                        if (finalPrice < finalMinPrice) {
+                                                minPricePerNight = roomPrice;
+                                                discountMinPricePerNight = discount;
+                                                finalMinPrice = finalPrice;
+                                        }
                                 }
-                                averageRating += room.getStar();
 
-                                Double roomPrice = room.getPrice();
-                                Double discount = room.getDiscount() != null ? room.getDiscount() : 0.0;
-
-                                Double finalPrice = roomPrice - (roomPrice * discount / 100);
-
-                                if (finalPrice < finalMinPrice) {
-                                        minPricePerNight = roomPrice;
-                                        discountMinPricePerNight = discount;
-                                        finalMinPrice = finalPrice;
-                                }
+                                averageRating = accommodation.getRooms().isEmpty() ? 0.0
+                                                : averageRating / accommodation.getRooms().size();
+                        } else {
+                                minPricePerNight = 0.0;
+                                discountMinPricePerNight = 0.0;
                         }
-
-                        averageRating = accommodation.getRooms().isEmpty() ? 0.0
-                                        : averageRating / accommodation.getRooms().size();
 
                         return AccommodationSummaryDTO.builder()
                                         .accommodationId(accommodation.getAccommodationId())
@@ -98,11 +110,12 @@ public class AccommodationService {
                                         .address(accommodation.getAddress())
                                         .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                         .image(accommodation.getImage())
-                                        .discountMinPricePerNight(discountMinPricePerNight)
+                                        .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0 : discountMinPricePerNight)
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                         .lat(accommodation.getLatitude())
                                         .lng(accommodation.getLongitude())
+                                        .isDeleted(accommodation.getIsDeleted())
                                         .build();
                 }).toList();
         }
@@ -221,6 +234,16 @@ public class AccommodationService {
                 return convertToDetailDTO(accommodation);
         }
 
+        public AccommodationDetailDTO restoreAccommodation(Long accommodationId) {
+                Accommodation accommodation = accommodationRepository.findById(accommodationId)
+                                .orElseThrow(() -> new NotFoundException("Accommodation not found"));
+
+                accommodation.setIsDeleted(false);
+                accommodationRepository.save(accommodation);
+
+                return convertToDetailDTO(accommodation);
+        }
+
         public AccommodationDetailDTO updateAccommodation(Long accommodationId,
                         AccommodationRequestDTO accommodationRequestDTO) {
                 return updateAccommodation(null, accommodationId, accommodationRequestDTO);
@@ -334,6 +357,7 @@ public class AccommodationService {
                                 .image(accommodation.getImage())
                                 .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                 .isFavorite(isFavorite)
+                                .isDeleted(accommodation.getIsDeleted())
                                 .locationId(accommodation.getLocation() != null ? accommodation.getLocation().getLocationId() : null);
 
                 Double starRating = 0.0;
@@ -458,7 +482,7 @@ public class AccommodationService {
                                 .accommodationId(accommodation.getAccommodationId())
                                 .accommodationName(accommodation.getAccommodationName())
                                 .address(accommodation.getAddress())
-                                .type(accommodation.getType().getDescription())
+                                .type(accommodation.getType() != null ? accommodation.getType().getDescription() : null)
                                 .image(accommodation.getImage())
                                 .averageRating(averageRating)
                                 .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
@@ -466,6 +490,7 @@ public class AccommodationService {
                                                 : discountMinPricePerNight)
                                 .lat(accommodation.getLatitude())
                                 .lng(accommodation.getLongitude())
+                                .isDeleted(accommodation.getIsDeleted())
                                 .build();
         }
 

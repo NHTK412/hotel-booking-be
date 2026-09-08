@@ -46,6 +46,34 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
         @Query("""
                         SELECT a
                         FROM Accommodation a
+                        WHERE (:includeDeleted = true OR a.isDeleted = false)
+                        AND (:locationId IS NULL OR a.location.locationId = :locationId)
+                        AND (:type IS NULL OR a.type = :type)
+                                """)
+        Page<Accommodation> findWithFilters(Pageable pageable, @Param("locationId") Long locationId,
+                        @Param("type") AccommodationTypeEnum type, @Param("includeDeleted") Boolean includeDeleted);
+
+        @Query("""
+                        SELECT a
+                        FROM Accommodation a
+                        WHERE (:includeDeleted = true OR a.isDeleted = false)
+                        AND (:locationId IS NULL OR a.location.locationId = :locationId)
+                        AND (:type IS NULL OR a.type = :type)
+                        ORDER BY COALESCE(
+                                (SELECT AVG(CAST(rt.star AS double))
+                                        FROM RoomType rt
+                                        WHERE rt.accommodation.accommodationId = a.accommodationId
+                                        AND rt.isDeleted = false
+                                        AND rt.star IS NOT NULL),
+                                0.0) DESC
+                                """)
+        Page<Accommodation> findWithFiltersSortedByStar(@Param("locationId") Long locationId,
+                        @Param("type") AccommodationTypeEnum type, @Param("includeDeleted") Boolean includeDeleted,
+                        Pageable pageable);
+
+        @Query("""
+                        SELECT a
+                        FROM Accommodation a
                         WHERE a.isDeleted = false
                         AND (:locationId IS NULL OR a.location.locationId = :locationId)
                         AND (:type IS NULL OR a.type = :type)

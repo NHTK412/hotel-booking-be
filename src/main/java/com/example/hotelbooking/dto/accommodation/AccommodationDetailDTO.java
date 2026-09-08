@@ -28,6 +28,7 @@ public class AccommodationDetailDTO {
     private Double starRating;
 
     private Boolean isFavorite;
+    private Boolean isDeleted;
 
     private Long locationId;
 

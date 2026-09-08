@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -39,17 +40,18 @@ public class AccommodationController {
                 this.accommodationService = accommodationService;
         }
 
-        @Operation(summary = "Lấy danh sách khách sạn (Công khai)", description = "Truy xuất danh sách khách sạn có phân trang, lọc theo loại hình (Khách sạn, Resort, Villa...), địa điểm và đánh giá sao")
+        @Operation(summary = "Lấy danh sách khách sạn (Công khai / Admin)", description = "Truy xuất danh sách khách sạn có phân trang, lọc theo loại hình, địa điểm, đánh giá sao. Truyền includeDeleted=true để xem cả khách sạn đang bị khóa")
         @GetMapping
         public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getAllAccommodations(
                         @RequestParam(defaultValue = "0") Integer page,
                         @RequestParam(defaultValue = "10") Integer size,
                         @RequestParam(required = false) AccommodationTypeEnum type,
                         @RequestParam(required = false) Long locationId,
-                        @RequestParam(required = false) Boolean sortBy) {
+                        @RequestParam(required = false) Boolean sortBy,
+                        @RequestParam(required = false, defaultValue = "false") Boolean includeDeleted) {
 
                 List<AccommodationSummaryDTO> accommodationSummaryDTOs = accommodationService
-                                .getAllAccommodation(PageRequest.of(page, size), type, locationId, sortBy);
+                                .getAllAccommodation(PageRequest.of(page, size), type, locationId, sortBy, includeDeleted);
 
                 ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
                                 "Lấy danh sách khách sạn thành công",
@@ -104,6 +106,22 @@ public class AccommodationController {
                 ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
                                 "Khóa khách sạn thành công",
                                 deletedAccommodation);
+
+                return ResponseEntity.ok(response);
+        }
+
+        @Operation(summary = "Mở khóa / Khôi phục khách sạn (Chỉ dành cho Admin)", description = "Khôi phục trạng thái hoạt động của khách sạn đã bị khóa")
+        @PreAuthorize("hasRole('ADMIN')")
+        @PatchMapping("/{accommodationId}/restore")
+        public ResponseEntity<ApiResponse<AccommodationDetailDTO>> restoreAccommodation(
+                        @PathVariable Long accommodationId) {
+
+                AccommodationDetailDTO restoredAccommodation = accommodationService
+                                .restoreAccommodation(accommodationId);
+
+                ApiResponse<AccommodationDetailDTO> response = new ApiResponse<>(true,
+                                "Mở khóa khách sạn thành công",
+                                restoredAccommodation);
 
                 return ResponseEntity.ok(response);
         }

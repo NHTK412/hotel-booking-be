@@ -23,6 +23,7 @@ public class AccommodationSummaryDTO {
 
     private Double lat;
     private Double lng;
+    private Boolean isDeleted;
 
 
     // private Double starRating;
