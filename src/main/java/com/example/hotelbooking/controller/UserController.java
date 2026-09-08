@@ -62,13 +62,15 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Đăng ký tài khoản Chủ khách sạn - Host (Chỉ dành cho Admin)", description = "Admin khởi tạo tài khoản Host và liên kết tài khoản này với khách sạn được quản lý")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Đăng ký tài khoản Chủ khách sạn / Lễ tân (Admin & Host)", description = "Admin có quyền cấp tài khoản Chủ khách sạn (ROLE_MANAGER) và Lễ tân (ROLE_RECEPTIONIST) cho mọi khách sạn. Chủ khách sạn có quyền cấp tài khoản Lễ tân cho khách sạn mình quản lý.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
     @PostMapping("/host")
     public ResponseEntity<ApiResponse<UserResponseDTO>> registerHost(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
             @Valid @RequestBody CreateHostDTO createHostDTO) {
-        UserResponseDTO userResponseDTO = userService.registerHost(createHostDTO);
-        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Đăng ký tài khoản Host thành công", userResponseDTO);
+        String providerId = customerUserDetails.getUsername();
+        UserResponseDTO userResponseDTO = userService.registerHost(providerId, createHostDTO);
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Đăng ký tài khoản thành công", userResponseDTO);
         return ResponseEntity.ok(response);
     }
 }

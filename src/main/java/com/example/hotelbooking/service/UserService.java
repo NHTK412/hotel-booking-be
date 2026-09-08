@@ -7,8 +7,11 @@ import org.springframework.stereotype.Service;
 import com.example.hotelbooking.dto.user.CreateHostDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
+import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
+import com.example.hotelbooking.exception.AccessDeniedException;
+import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Accommodation;
 import com.example.hotelbooking.model.AccommodationStaff;
@@ -114,7 +117,31 @@ public class UserService {
         }
 
         @Transactional
-        public UserResponseDTO registerHost(CreateHostDTO createHostDTO) {
+        public UserResponseDTO registerHost(String currentProviderId, CreateHostDTO createHostDTO) {
+                UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(currentProviderId)
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+                User currentUser = currentAuthProvider.getUser();
+
+                if (currentUser.getRole() == UserRoleEnum.ROLE_HOST) {
+                        if (createHostDTO.getHostRole() != AccommodationStaffRoleEnum.ROLE_RECEPTIONIST) {
+                                throw new AccessDeniedException("Chủ khách sạn chỉ có quyền cấp tài khoản Lễ tân (ROLE_RECEPTIONIST)");
+                        }
+                        boolean isManager = currentUser.getAccommodationStaffs() != null && currentUser.getAccommodationStaffs().stream()
+                                        .anyMatch(staff -> staff.getAccommodation() != null
+                                                        && staff.getAccommodation().getAccommodationId().equals(createHostDTO.getAccommodationId())
+                                                        && staff.getRole() == AccommodationStaffRoleEnum.ROLE_MANAGER);
+                        if (!isManager) {
+                                throw new AccessDeniedException("Bạn không có quyền quản lý khách sạn này");
+                        }
+                } else if (currentUser.getRole() != UserRoleEnum.ROLE_ADMIN) {
+                        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+                }
+
+                if (userRepository.existsByEmail(createHostDTO.getEmail())
+                                || userAuthProviderRepository.findByProviderUserId(createHostDTO.getEmail()).isPresent()) {
+                        throw new ConflictException("Email đã được sử dụng trong hệ thống.");
+                }
+
                 User user = new User();
                 user.setName(createHostDTO.getName());
                 user.setEmail(createHostDTO.getEmail());
@@ -148,6 +175,7 @@ public class UserService {
                 accommodationStaff.setRole(createHostDTO.getHostRole());
 
                 user.getAccommodationStaffs().add(accommodationStaff);
+                user.getAuthProviders().add(authProvider);
 
                 User savedUser = userRepository.save(user);
 
