@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.enums.GenderEnum;
@@ -35,6 +36,7 @@ import com.example.hotelbooking.model.AccommodationStaff;
 import com.example.hotelbooking.model.User;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.repository.AccommodationRepository;
+import com.example.hotelbooking.repository.AccommodationStaffRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 
@@ -50,6 +52,9 @@ class UserServiceStaffRegistrationTest {
 
     @Mock
     private AccommodationRepository accommodationRepository;
+
+    @Mock
+    private AccommodationStaffRepository accommodationStaffRepository;
 
     @Mock
     private FileUploadService fileUploadService;
@@ -270,6 +275,108 @@ class UserServiceStaffRegistrationTest {
             assertThatThrownBy(() -> userService.registerHost("customer@user.com", dto))
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessageContaining("Bạn không có quyền");
+        }
+    }
+
+    @Nested
+    @DisplayName("Get Staff By Accommodation Tests")
+    class GetStaffByAccommodationTests {
+
+        @Test
+        @DisplayName("Admin can get staff list of any accommodation")
+        void admin_getStaffByAccommodation_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setUser(hostManagerUser);
+            staff.setAccommodation(accommodation1);
+            staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+
+            when(accommodationStaffRepository.findByAccommodation_AccommodationId(10L))
+                    .thenReturn(List.of(staff));
+
+            List<StaffResponseDTO> result = userService.getStaffByAccommodation("admin@hotel.com", 10L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getName()).isEqualTo("Host Manager");
+            assertThat(result.get(0).getAccommodationName()).isEqualTo("Grand Hotel");
+        }
+
+        @Test
+        @DisplayName("Host Manager can get staff list of own accommodation")
+        void hostManager_getStaffByAccommodation_success() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setUser(hostManagerUser);
+            staff.setAccommodation(accommodation1);
+            staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+
+            when(accommodationStaffRepository.findByAccommodation_AccommodationId(10L))
+                    .thenReturn(List.of(staff));
+
+            List<StaffResponseDTO> result = userService.getStaffByAccommodation("manager@hotel.com", 10L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getName()).isEqualTo("Host Manager");
+        }
+
+        @Test
+        @DisplayName("Host Manager cannot get staff of accommodation they do not manage")
+        void hostManager_getStaffOfOtherAccommodation_throwsAccessDenied() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            assertThatThrownBy(() -> userService.getStaffByAccommodation("manager@hotel.com", 20L))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Bạn không có quyền xem nhân sự");
+        }
+    }
+
+    @Nested
+    @DisplayName("Get All Staff Tests")
+    class GetAllStaffTests {
+
+        @Test
+        @DisplayName("Admin searches all staff successfully")
+        void admin_getAllStaff_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setUser(hostManagerUser);
+            staff.setAccommodation(accommodation1);
+            staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+
+            when(accommodationStaffRepository.searchStaff(null, null, "Manager"))
+                    .thenReturn(List.of(staff));
+
+            List<StaffResponseDTO> result = userService.getAllStaff("admin@hotel.com", null, null, "Manager");
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getEmail()).isEqualTo(hostManagerUser.getEmail());
+        }
+
+        @Test
+        @DisplayName("Host Manager gets staff within their managed accommodations")
+        void hostManager_getAllStaff_success() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setUser(hostManagerUser);
+            staff.setAccommodation(accommodation1);
+            staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+
+            when(accommodationStaffRepository.searchStaffForAccommodations(List.of(10L), null, null, null))
+                    .thenReturn(List.of(staff));
+
+            List<StaffResponseDTO> result = userService.getAllStaff("manager@hotel.com", null, null, null);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getName()).isEqualTo("Host Manager");
         }
     }
 }

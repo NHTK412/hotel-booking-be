@@ -1,5 +1,7 @@
 package com.example.hotelbooking.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -9,11 +11,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
+import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.UserService;
 import com.example.hotelbooking.util.ApiResponse;
@@ -22,7 +27,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-@Tag(name = "7. Người Dùng & Hồ Sơ (Users & Profiles)", description = "Các API xem thông tin cá nhân, cập nhật hồ sơ người dùng và Admin tạo tài khoản Host")
+@Tag(name = "7. Người Dùng & Hồ Sơ (Users & Profiles)", description = "Các API xem thông tin cá nhân, cập nhật hồ sơ người dùng, quản lý nhân sự và Admin tạo tài khoản Host")
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -71,6 +76,32 @@ public class UserController {
         String providerId = customerUserDetails.getUsername();
         UserResponseDTO userResponseDTO = userService.registerHost(providerId, createHostDTO);
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, "Đăng ký tài khoản thành công", userResponseDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Lấy danh sách nhân sự theo cơ sở lưu trú (Admin & Host)", description = "Admin xem được mọi khách sạn. Host chỉ xem được khách sạn mình quản lý.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @GetMapping("/accommodation/{accommodationId}")
+    public ResponseEntity<ApiResponse<List<StaffResponseDTO>>> getStaffByAccommodation(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long accommodationId) {
+        String providerId = customerUserDetails.getUsername();
+        List<StaffResponseDTO> staffList = userService.getStaffByAccommodation(providerId, accommodationId);
+        ApiResponse<List<StaffResponseDTO>> response = new ApiResponse<>(true, "Lấy danh sách nhân sự thành công", staffList);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Lấy danh sách toàn bộ nhân sự / quản lý hệ thống (Admin & Host)", description = "Lấy danh sách nhân sự (không bao gồm khách hàng). Admin lấy toàn bộ hoặc lọc theo cơ sở, Host lấy trong phạm vi cơ sở mình quản lý.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @GetMapping("/staff")
+    public ResponseEntity<ApiResponse<List<StaffResponseDTO>>> getAllStaff(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @RequestParam(required = false) Long accommodationId,
+            @RequestParam(required = false) AccommodationStaffRoleEnum role,
+            @RequestParam(required = false) String keyword) {
+        String providerId = customerUserDetails.getUsername();
+        List<StaffResponseDTO> staffList = userService.getAllStaff(providerId, accommodationId, role, keyword);
+        ApiResponse<List<StaffResponseDTO>> response = new ApiResponse<>(true, "Lấy danh sách người dùng hệ thống thành công", staffList);
         return ResponseEntity.ok(response);
     }
 }

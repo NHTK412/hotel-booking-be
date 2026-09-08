@@ -1,10 +1,13 @@
 package com.example.hotelbooking.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
@@ -18,6 +21,7 @@ import com.example.hotelbooking.model.AccommodationStaff;
 import com.example.hotelbooking.model.User;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.repository.AccommodationRepository;
+import com.example.hotelbooking.repository.AccommodationStaffRepository;
 import com.example.hotelbooking.repository.UserAuthProviderRepository;
 import com.example.hotelbooking.repository.UserRepository;
 
@@ -33,15 +37,19 @@ public class UserService {
         private final UserRepository userRepository;
         private final UserAuthProviderRepository userAuthProviderRepository;
         private final AccommodationRepository accommodationRepository;
+        private final AccommodationStaffRepository accommodationStaffRepository;
         private final FileUploadService fileUploadService;
         private final PasswordEncoder passwordEncoder;
 
         public UserService(UserRepository userRepository, UserAuthProviderRepository userAuthProviderRepository,
-                        AccommodationRepository accommodationRepository, FileUploadService fileUploadService,
+                        AccommodationRepository accommodationRepository,
+                        AccommodationStaffRepository accommodationStaffRepository,
+                        FileUploadService fileUploadService,
                         PasswordEncoder passwordEncoder) {
                 this.userRepository = userRepository;
                 this.userAuthProviderRepository = userAuthProviderRepository;
                 this.accommodationRepository = accommodationRepository;
+                this.accommodationStaffRepository = accommodationStaffRepository;
                 this.fileUploadService = fileUploadService;
                 this.passwordEncoder = passwordEncoder;
         }
@@ -188,6 +196,91 @@ public class UserService {
                                 .gender(savedUser.getGender() != null ? savedUser.getGender().getDisplayName() : null)
                                 .address(savedUser.getAddress())
                                 .avatarUrl(savedUser.getAvatarUrl())
+                                .build();
+        }
+
+        public List<StaffResponseDTO> getStaffByAccommodation(String providerId, Long accommodationId) {
+                UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+                User currentUser = currentAuthProvider.getUser();
+
+                if (currentUser.getRole() == UserRoleEnum.ROLE_HOST) {
+                        boolean isManager = currentUser.getAccommodationStaffs() != null && currentUser.getAccommodationStaffs().stream()
+                                        .anyMatch(staff -> staff.getAccommodation() != null
+                                                        && staff.getAccommodation().getAccommodationId().equals(accommodationId)
+                                                        && staff.getRole() == AccommodationStaffRoleEnum.ROLE_MANAGER);
+                        if (!isManager) {
+                                throw new AccessDeniedException("Bạn không có quyền xem nhân sự của khách sạn này");
+                        }
+                } else if (currentUser.getRole() != UserRoleEnum.ROLE_ADMIN) {
+                        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+                }
+
+                List<AccommodationStaff> staffList = accommodationStaffRepository.findByAccommodation_AccommodationId(accommodationId);
+                return staffList.stream()
+                                .map(this::convertToStaffResponseDTO)
+                                .toList();
+        }
+
+        public List<StaffResponseDTO> getAllStaff(String providerId, Long accommodationId, AccommodationStaffRoleEnum role, String keyword) {
+                UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+                User currentUser = currentAuthProvider.getUser();
+
+                String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+
+                if (currentUser.getRole() == UserRoleEnum.ROLE_ADMIN) {
+                        List<AccommodationStaff> staffList = accommodationStaffRepository.searchStaff(accommodationId, role, cleanKeyword);
+                        return staffList.stream()
+                                        .map(this::convertToStaffResponseDTO)
+                                        .toList();
+                } else if (currentUser.getRole() == UserRoleEnum.ROLE_HOST) {
+                        List<Long> managedAccommodationIds = currentUser.getAccommodationStaffs() != null
+                                        ? currentUser.getAccommodationStaffs().stream()
+                                                        .filter(s -> s.getAccommodation() != null && s.getRole() == AccommodationStaffRoleEnum.ROLE_MANAGER)
+                                                        .map(s -> s.getAccommodation().getAccommodationId())
+                                                        .toList()
+                                        : List.of();
+
+                        if (managedAccommodationIds.isEmpty()) {
+                                return List.of();
+                        }
+
+                        if (accommodationId != null && !managedAccommodationIds.contains(accommodationId)) {
+                                throw new AccessDeniedException("Bạn không có quyền xem nhân sự của khách sạn này");
+                        }
+
+                        List<AccommodationStaff> staffList = accommodationStaffRepository.searchStaffForAccommodations(
+                                        managedAccommodationIds, accommodationId, role, cleanKeyword);
+                        return staffList.stream()
+                                        .map(this::convertToStaffResponseDTO)
+                                        .toList();
+                } else {
+                        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+                }
+        }
+
+        private StaffResponseDTO convertToStaffResponseDTO(AccommodationStaff staff) {
+                User u = staff.getUser();
+                Accommodation acc = staff.getAccommodation();
+                return StaffResponseDTO.builder()
+                                .id(u.getId())
+                                .userId(u.getId())
+                                .name(u.getName())
+                                .email(u.getEmail())
+                                .phone(u.getPhone())
+                                .birthday(u.getBirthday())
+                                .gender(u.getGender() != null ? u.getGender().getDisplayName() : null)
+                                .address(u.getAddress())
+                                .avatarUrl(u.getAvatarUrl())
+                                .systemRole(u.getRole())
+                                .role(staff.getRole())
+                                .staffRole(staff.getRole())
+                                .isActive(u.getIsActive() != null ? u.getIsActive() : true)
+                                .accommodationId(acc != null ? acc.getAccommodationId() : null)
+                                .accommodationName(acc != null ? acc.getAccommodationName() : null)
+                                .hotelType(acc != null ? acc.getType() : null)
+                                .createdAt(u.getCreateAt())
                                 .build();
         }
 }
