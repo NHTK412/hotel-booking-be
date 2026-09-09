@@ -326,6 +326,7 @@ public class AccommodationService {
                 List<AccommodationStaff> staffAssignments = userAuthProvider.getUser().getAccommodationStaffs();
 
                 boolean hasAccess = staffAssignments != null && staffAssignments.stream()
+                                .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
                                 .map(staff -> staff.getAccommodation().getAccommodationId())
                                 .anyMatch(id -> id.equals(accommodationId));
 
@@ -380,6 +381,8 @@ public class AccommodationService {
                                                 .image(room.getImage())
                                                 .discount(room.getDiscount())
                                                 .address(accommodation.getAddress())
+                                                .status(room.getStatus())
+                                                .isDeleted(room.getIsDeleted())
                                                 .build());
 
                                 totalStars += room.getStar();
@@ -515,6 +518,7 @@ public class AccommodationService {
                 }
 
                 return user.getAccommodationStaffs().stream()
+                                .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
                                 .map(AccommodationStaff::getAccommodation)
                                 .filter(Objects::nonNull)
                                 .filter(acc -> Boolean.FALSE.equals(acc.getIsDeleted()))

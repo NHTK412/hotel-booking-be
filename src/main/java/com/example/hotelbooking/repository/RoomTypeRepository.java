@@ -22,6 +22,11 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, Long> {
             JOIN a.location l
             WHERE
                 l.locationId = :locationId
+                AND rt.isDeleted = false
+                AND rt.status = com.example.hotelbooking.enums.StatusEnum.ACTIVE
+                AND a.isDeleted = false
+                AND r.isDeleted = false
+                AND r.status = com.example.hotelbooking.enums.StatusEnum.ACTIVE
                 AND (:capacity IS NULL OR rt.capacity >= :capacity)
                 AND (:bedroom IS NULL OR rt.bedroom >= :bedroom)
                 AND (
@@ -48,4 +53,8 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, Long> {
     Page<RoomType> findByAccommodation_AccommodationIdAndIsDeletedFalse(Long accommodationId, Pageable pageable);
 
     Page<RoomType> findByAccommodation_AccommodationIdInAndIsDeletedFalse(List<Long> accommodationIds, Pageable pageable);
+
+    Page<RoomType> findByAccommodation_AccommodationIdAndIsDeleted(Long accommodationId, Boolean isDeleted, Pageable pageable);
+
+    Page<RoomType> findByAccommodation_AccommodationIdInAndIsDeleted(List<Long> accommodationIds, Boolean isDeleted, Pageable pageable);
 }

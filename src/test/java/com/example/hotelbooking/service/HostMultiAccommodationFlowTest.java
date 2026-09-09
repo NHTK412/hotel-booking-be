@@ -202,10 +202,10 @@ class HostMultiAccommodationFlowTest {
             Pageable pageable = PageRequest.of(0, 10);
             Page<RoomType> page = new PageImpl<>(List.of(rt1, rt2), pageable, 2);
 
-            when(roomTypeRepository.findByAccommodation_AccommodationIdInAndIsDeletedFalse(any(), eq(pageable)))
+            when(roomTypeRepository.findByAccommodation_AccommodationIdInAndIsDeleted(any(), eq(false), eq(pageable)))
                     .thenReturn(page);
 
-            List<RoomTypeSummaryDTO> results = roomTypeService.getHostRoomTypes("host@hotel.com", null, pageable);
+            List<RoomTypeSummaryDTO> results = roomTypeService.getHostRoomTypes("host@hotel.com", null, false, pageable);
 
             assertNotNull(results);
             assertEquals(2, results.size());
@@ -236,14 +236,40 @@ class HostMultiAccommodationFlowTest {
             Pageable pageable = PageRequest.of(0, 10);
             Page<RoomType> page = new PageImpl<>(List.of(rt1, rt2), pageable, 2);
 
-            when(roomTypeRepository.findByAccommodation_AccommodationIdAndIsDeletedFalse(10L, pageable))
+            when(roomTypeRepository.findByAccommodation_AccommodationIdAndIsDeleted(10L, false, pageable))
                     .thenReturn(page);
 
-            List<RoomTypeSummaryDTO> results = roomTypeService.getHostRoomTypes("host@hotel.com", 10L, pageable);
+            List<RoomTypeSummaryDTO> results = roomTypeService.getHostRoomTypes("host@hotel.com", 10L, false, pageable);
 
             assertNotNull(results);
             assertEquals(2, results.size());
             assertEquals(10L, results.get(0).getAccommodationId());
+        }
+
+        @Test
+        @DisplayName("Should return deleted room types when isDeleted is true")
+        void shouldReturnDeletedRoomTypesWhenIsDeletedIsTrue() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            RoomType rtDeleted = new RoomType();
+            rtDeleted.setRoomtypeId(103L);
+            rtDeleted.setName("Old Room");
+            rtDeleted.setPrice(500000.0);
+            rtDeleted.setAccommodation(hotel1);
+            rtDeleted.setIsDeleted(true);
+
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<RoomType> page = new PageImpl<>(List.of(rtDeleted), pageable, 1);
+
+            when(roomTypeRepository.findByAccommodation_AccommodationIdAndIsDeleted(10L, true, pageable))
+                    .thenReturn(page);
+
+            List<RoomTypeSummaryDTO> results = roomTypeService.getHostRoomTypes("host@hotel.com", 10L, true, pageable);
+
+            assertNotNull(results);
+            assertEquals(1, results.size());
+            assertTrue(results.get(0).getIsDeleted());
         }
 
         @Test
@@ -255,7 +281,28 @@ class HostMultiAccommodationFlowTest {
             Pageable pageable = PageRequest.of(0, 10);
 
             assertThrows(AccessDeniedException.class,
-                    () -> roomTypeService.getHostRoomTypes("host@hotel.com", 999L, pageable));
+                    () -> roomTypeService.getHostRoomTypes("host@hotel.com", 999L, false, pageable));
+        }
+
+        @Test
+        @DisplayName("Should restore room type successfully")
+        void shouldRestoreRoomTypeSuccessfully() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(105L);
+            rt.setName("Archived Suite");
+            rt.setAccommodation(hotel1);
+            rt.setIsDeleted(true);
+
+            when(roomTypeRepository.findById(105L)).thenReturn(Optional.of(rt));
+
+            var result = roomTypeService.restoreRoomType("host@hotel.com", 105L);
+
+            assertNotNull(result);
+            org.junit.jupiter.api.Assertions.assertFalse(rt.getIsDeleted());
+            org.junit.jupiter.api.Assertions.assertFalse(result.getIsDeleted());
         }
     }
 
@@ -403,6 +450,97 @@ class HostMultiAccommodationFlowTest {
 
             assertThrows(AccessDeniedException.class,
                     () -> bookingService.getBookingsForHost("host@hotel.com", 999L, null, 0, 10));
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests for Soft Delete and Status (ACTIVE / INACTIVE) Rules")
+    class SoftDeleteAndStatusRuleTests {
+
+        @Test
+        @DisplayName("Should update room type status to INACTIVE successfully")
+        void shouldUpdateRoomTypeStatusSuccessfully() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setName("Deluxe Room");
+            rt.setAccommodation(hotel1);
+            rt.setStatus(StatusEnum.ACTIVE);
+            rt.setIsDeleted(false);
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+            when(roomTypeRepository.save(any(RoomType.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            var result = roomTypeService.updateRoomTypeStatus("host@hotel.com", 101L, StatusEnum.INACTIVE);
+
+            assertNotNull(result);
+            assertEquals(StatusEnum.INACTIVE, result.getStatus());
+            assertEquals(false, result.getIsDeleted());
+        }
+
+        @Test
+        @DisplayName("Should filter physical rooms by isDeleted flag (hide deleted rooms by default)")
+        void shouldFilterPhysicalRoomsByIsDeleted() {
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setName("Deluxe Room");
+            rt.setAccommodation(hotel1);
+
+            Room activeRoom = new Room();
+            activeRoom.setRoomId(501L);
+            activeRoom.setName("101");
+            activeRoom.setStatus(StatusEnum.ACTIVE);
+            activeRoom.setIsDeleted(false);
+
+            Room deletedRoom = new Room();
+            deletedRoom.setRoomId(502L);
+            deletedRoom.setName("102");
+            deletedRoom.setStatus(StatusEnum.ACTIVE);
+            deletedRoom.setIsDeleted(true);
+
+            rt.setRooms(new ArrayList<>(List.of(activeRoom, deletedRoom)));
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+
+            List<RoomSummaryDTO> activeRooms = roomTypeService.getRoomsByRoomType(101L, false);
+            assertEquals(1, activeRooms.size());
+            assertEquals("101", activeRooms.get(0).getRoomNumber());
+            assertEquals(false, activeRooms.get(0).getIsDeleted());
+
+            List<RoomSummaryDTO> trashRooms = roomTypeService.getRoomsByRoomType(101L, true);
+            assertEquals(1, trashRooms.size());
+            assertEquals("102", trashRooms.get(0).getRoomNumber());
+            assertEquals(true, trashRooms.get(0).getIsDeleted());
+        }
+
+        @Test
+        @DisplayName("Should restore soft-deleted physical rooms successfully")
+        void shouldRestorePhysicalRoomsSuccessfully() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setName("Deluxe Room");
+            rt.setAccommodation(hotel1);
+
+            Room deletedRoom = new Room();
+            deletedRoom.setRoomId(502L);
+            deletedRoom.setName("102");
+            deletedRoom.setStatus(StatusEnum.ACTIVE);
+            deletedRoom.setIsDeleted(true);
+
+            rt.setRooms(new ArrayList<>(List.of(deletedRoom)));
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+            when(roomTypeRepository.save(any(RoomType.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            List<RoomSummaryDTO> result = roomTypeService.restoreRoomsFromRoomType("host@hotel.com", 101L, List.of(502L));
+
+            assertNotNull(result);
+            assertEquals(false, result.get(0).getIsDeleted());
         }
     }
 }

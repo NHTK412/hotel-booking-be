@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.hotelbooking.enums.GenderEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 
 import jakarta.persistence.CascadeType;
@@ -27,7 +28,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "Users", indexes = {
     @Index(name = "idx_user_email", columnList = "email"),
-    @Index(name = "idx_user_role_active", columnList = "roleUser, isActive")
+    @Index(name = "idx_user_role_active", columnList = "roleUser, isActive"),
+    @Index(name = "idx_user_status_deleted", columnList = "status, isDeleted")
 })
 @Getter
 @Setter
@@ -66,8 +68,15 @@ public class User extends BaseEntity {
     @Column(name = "roleUser", nullable = false)
     private UserRoleEnum role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private StatusEnum status = StatusEnum.ACTIVE;
+
     @Column(name = "isActive", nullable = false)
-    private Boolean isActive;
+    private Boolean isActive = true;
+
+    @Column(name = "isDeleted", nullable = false)
+    private Boolean isDeleted = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<AccommodationStaff> accommodationStaffs = new ArrayList<>();

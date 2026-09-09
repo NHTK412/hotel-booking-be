@@ -3,6 +3,7 @@ package com.example.hotelbooking.dto.roomtype;
 import java.util.List;
 
 import com.example.hotelbooking.enums.AmenityEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
@@ -27,6 +28,9 @@ public class RoomTypeRequestDTO {
     @NotBlank(message = "Tên loại phòng không được để trống")
     @Schema(description = "Tên hạng phòng", example = "Deluxe Ocean View")
     private String name;
+
+    @Schema(description = "Trạng thái hoạt động của loại phòng (ACTIVE: hoạt động, INACTIVE: tạm ngưng nhận khách)", example = "ACTIVE")
+    private StatusEnum status;
 
     @NotNull(message = "Giá phòng không được để trống")
     @Positive(message = "Giá phòng phải lớn hơn 0")

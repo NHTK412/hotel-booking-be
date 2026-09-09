@@ -73,15 +73,7 @@ public class RoomTypeService {
                 checkOutAt,
                 pageable).toList();
 
-        return roomTypes.stream().map(roomType -> RoomTypeSummaryDTO.builder()
-                .roomtypeId(roomType.getRoomtypeId())
-                .name(roomType.getName())
-                .star(roomType.getStar())
-                .price(roomType.getPrice())
-                .image(roomType.getImage())
-                .address(roomType.getAccommodation().getAccommodationName())
-                .discount(roomType.getDiscount())
-                .build()).toList();
+        return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
     }
 
     private Integer normalizePositiveInteger(Integer value) {
@@ -103,6 +95,7 @@ public class RoomTypeService {
 
         RoomType roomType = new RoomType();
         roomType.setName(roomTypeRequestDTO.getName());
+        roomType.setStatus(roomTypeRequestDTO.getStatus() != null ? roomTypeRequestDTO.getStatus() : StatusEnum.ACTIVE);
         roomType.setStar(0);
         roomType.setPrice(roomTypeRequestDTO.getPrice());
         roomType.setDiscount(roomTypeRequestDTO.getDiscount());
@@ -140,6 +133,19 @@ public class RoomTypeService {
     }
 
     @Transactional
+    public RoomTypeDetailDTO restoreRoomType(String providerId, Long roomTypeId) {
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        RoomType roomType = getRoomType(roomTypeId);
+
+        ensureHostHasAccommodation(userAuthProvider, roomType.getAccommodation().getAccommodationId());
+
+        roomType.setIsDeleted(false);
+        roomTypeRepository.save(roomType);
+
+        return mapToRoomTypeDetailDTO(roomType);
+    }
+
+    @Transactional
     public RoomTypeDetailDTO updateRoomType(String providerId, Long roomTypeId,
             RoomTypeRequestDTO roomTypeRequestDTO) {
         UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
@@ -168,8 +174,27 @@ public class RoomTypeService {
             roomTypeRequestDTO.getImagesPreview().forEach(fileUploadService::deleteFileByPublicId);
         }
 
+        if (roomTypeRequestDTO.getStatus() != null) {
+            roomType.setStatus(roomTypeRequestDTO.getStatus());
+        }
+
         roomType.setAmenities(roomTypeRequestDTO.getAmenities());
 
+        RoomType updatedRoomType = roomTypeRepository.save(roomType);
+        return mapToRoomTypeDetailDTO(updatedRoomType);
+    }
+
+    @Transactional
+    public RoomTypeDetailDTO updateRoomTypeStatus(String providerId, Long roomTypeId, StatusEnum status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Trạng thái (status) không được để trống.");
+        }
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        RoomType roomType = getRoomType(roomTypeId);
+
+        ensureHostHasAccommodation(userAuthProvider, roomType.getAccommodation().getAccommodationId());
+
+        roomType.setStatus(status);
         RoomType updatedRoomType = roomTypeRepository.save(roomType);
         return mapToRoomTypeDetailDTO(updatedRoomType);
     }
@@ -264,8 +289,34 @@ public class RoomTypeService {
     }
 
     public List<RoomSummaryDTO> getRoomsByRoomType(Long roomTypeId) {
+        return getRoomsByRoomType(roomTypeId, false);
+    }
+
+    public List<RoomSummaryDTO> getRoomsByRoomType(Long roomTypeId, Boolean isDeleted) {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new NotFoundException("Room type not found with id: " + roomTypeId));
+
+        boolean filterDeleted = Boolean.TRUE.equals(isDeleted);
+        return roomType.getRooms().stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsDeleted()) == filterDeleted)
+                .map(this::mapToRoomSummaryDTO)
+                .toList();
+    }
+
+    @Transactional
+    public List<RoomSummaryDTO> restoreRoomsFromRoomType(String providerId, Long roomTypeId, List<Long> roomIds) {
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        RoomType roomType = getRoomType(roomTypeId);
+
+        ensureHostHasAccommodation(userAuthProvider, roomType.getAccommodation().getAccommodationId());
+
+        roomType.getRooms().forEach(e -> {
+            if (roomIds.contains(e.getRoomId())) {
+                e.setIsDeleted(false);
+            }
+        });
+
+        roomTypeRepository.save(roomType);
 
         return roomType.getRooms().stream().map(this::mapToRoomSummaryDTO).toList();
     }
@@ -293,6 +344,8 @@ public class RoomTypeService {
                 .description(roomType.getDescription())
                 .capacity(roomType.getCapacity())
                 .discount(roomType.getDiscount())
+                .status(roomType.getStatus())
+                .isDeleted(roomType.getIsDeleted())
                 .build();
     }
 
@@ -305,6 +358,10 @@ public class RoomTypeService {
     }
 
     public List<RoomTypeSummaryDTO> getHostRoomTypes(String providerId, Long accommodationId, Pageable pageable) {
+        return getHostRoomTypes(providerId, accommodationId, false, pageable);
+    }
+
+    public List<RoomTypeSummaryDTO> getHostRoomTypes(String providerId, Long accommodationId, Boolean isDeleted, Pageable pageable) {
         UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
         List<AccommodationStaff> staffs = userAuthProvider.getUser().getAccommodationStaffs();
         if (staffs == null || staffs.isEmpty()) {
@@ -312,21 +369,24 @@ public class RoomTypeService {
         }
 
         List<Long> managedAccommodationIds = staffs.stream()
+                .filter(s -> !Boolean.TRUE.equals(s.getIsDeleted()))
                 .map(s -> s.getAccommodation().getAccommodationId())
                 .distinct()
                 .toList();
+
+        boolean filterDeleted = Boolean.TRUE.equals(isDeleted);
 
         if (accommodationId != null) {
             if (!managedAccommodationIds.contains(accommodationId)) {
                 throw new AccessDeniedException("Accommodation not found with id: " + accommodationId + " for the user.");
             }
             List<RoomType> roomTypes = roomTypeRepository
-                    .findByAccommodation_AccommodationIdAndIsDeletedFalse(accommodationId, pageable)
+                    .findByAccommodation_AccommodationIdAndIsDeleted(accommodationId, filterDeleted, pageable)
                     .toList();
             return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
         } else {
             List<RoomType> roomTypes = roomTypeRepository
-                    .findByAccommodation_AccommodationIdInAndIsDeletedFalse(managedAccommodationIds, pageable)
+                    .findByAccommodation_AccommodationIdInAndIsDeleted(managedAccommodationIds, filterDeleted, pageable)
                     .toList();
             return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
         }
@@ -344,6 +404,8 @@ public class RoomTypeService {
                 .address(acc != null ? acc.getAddress() : null)
                 .accommodationId(acc != null ? acc.getAccommodationId() : null)
                 .accommodationName(acc != null ? acc.getAccommodationName() : null)
+                .status(roomType.getStatus())
+                .isDeleted(roomType.getIsDeleted())
                 .build();
     }
 
@@ -372,6 +434,7 @@ public class RoomTypeService {
                 .getAccommodationStaffs();
 
         boolean hasAccess = staffAssignments != null && staffAssignments.stream()
+                .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
                 .map(staff -> staff.getAccommodation().getAccommodationId())
                 .anyMatch(id -> id.equals(accommodationId));
 

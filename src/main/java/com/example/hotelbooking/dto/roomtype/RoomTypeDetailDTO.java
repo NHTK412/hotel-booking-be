@@ -3,6 +3,7 @@ package com.example.hotelbooking.dto.roomtype;
 import java.util.List;
 
 import com.example.hotelbooking.enums.AmenityEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -24,4 +25,6 @@ public class RoomTypeDetailDTO {
     private Integer capacity;
     private Integer bedroom;
     private String description;
+    private StatusEnum status;
+    private Boolean isDeleted;
 }

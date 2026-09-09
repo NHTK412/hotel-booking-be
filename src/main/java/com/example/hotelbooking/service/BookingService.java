@@ -2,6 +2,7 @@ package com.example.hotelbooking.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,7 @@ import com.example.hotelbooking.dto.booking.BookingDetailDTO;
 import com.example.hotelbooking.dto.booking.BookingRequestDTO;
 import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
 import com.example.hotelbooking.enums.BookingStatusEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.AccessDeniedException;
 import com.example.hotelbooking.exception.BadRequestException;
@@ -25,6 +27,7 @@ import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.AccommodationStaff;
 import com.example.hotelbooking.model.Booking;
 import com.example.hotelbooking.model.Room;
+import com.example.hotelbooking.model.RoomType;
 import com.example.hotelbooking.model.User;
 import com.example.hotelbooking.model.UserAuthProvider;
 import com.example.hotelbooking.repository.BookingRepository;
@@ -58,6 +61,16 @@ public class BookingService {
                 this.fcmService = fcmService;
         }
 
+        private Set<Long> getHostAccommodationIds(UserAuthProvider userAuthProvider) {
+                if (userAuthProvider == null || userAuthProvider.getUser() == null || userAuthProvider.getUser().getAccommodationStaffs() == null) {
+                        return Collections.emptySet();
+                }
+                return userAuthProvider.getUser().getAccommodationStaffs().stream()
+                                .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .collect(Collectors.toSet());
+        }
+
         @Transactional
         public BookingDetailDTO createBooking(String username, BookingRequestDTO bookingRequestDTO) {
 
@@ -77,12 +90,29 @@ public class BookingService {
                                                 bookingRequestDTO.getCheckOutDate().atTime(12, 0));
 
                 if (availableRooms.isEmpty()) {
+                        roomTypeRepository.findById(bookingRequestDTO.getRoomTypeId()).ifPresent(rt -> {
+                                if (Boolean.TRUE.equals(rt.getIsDeleted())) {
+                                        throw new NotFoundException("Loại phòng này không tồn tại hoặc đã bị xóa.");
+                                }
+                                if (rt.getStatus() == StatusEnum.INACTIVE) {
+                                        throw new BadRequestException("Loại phòng này hiện đang tạm ngưng nhận đặt (INACTIVE), quý khách chỉ có thể xem thông tin.");
+                                }
+                        });
                         throw new NotFoundException("No available rooms for the selected room type and dates");
                 }
 
                 // Cưỡng chế kiểm tra & tăng version của phòng bằng Optimistic Lock
                 final Room lockedRoom = roomRepository.findByIdWithOptimisticLock(availableRooms.get(0).getRoomId())
                                 .orElseThrow(() -> new NotFoundException("Selected room is no longer available"));
+
+                if (lockedRoom.getRoomType() != null) {
+                        if (Boolean.TRUE.equals(lockedRoom.getRoomType().getIsDeleted())) {
+                                throw new NotFoundException("Loại phòng này không tồn tại hoặc đã bị xóa.");
+                        }
+                        if (lockedRoom.getRoomType().getStatus() == StatusEnum.INACTIVE) {
+                                throw new BadRequestException("Loại phòng này hiện đang tạm ngưng nhận đặt (INACTIVE), quý khách chỉ có thể xem thông tin.");
+                        }
+                }
 
                 final UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(username)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
@@ -130,9 +160,7 @@ public class BookingService {
                                 .orElseThrow(() -> new NotFoundException("Booking not found"));
 
                 if (userRole == UserRoleEnum.ROLE_HOST) {
-                        Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                        .map(staff -> staff.getAccommodation().getAccommodationId())
-                                        .collect(Collectors.toSet());
+                        Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                         Long bookingAccommodationId = booking.getRoom().getRoomType().getAccommodation()
                                         .getAccommodationId();
@@ -160,9 +188,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -213,9 +239,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 final Booking booking = bookingRepository.findById(bookingId)
                                 .orElseThrow(() -> new NotFoundException("Booking not found"));
@@ -301,9 +325,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -331,6 +353,7 @@ public class BookingService {
                 }
 
                 List<Long> managedAccommodationIds = staffs.stream()
+                                .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
                                 .map(staff -> staff.getAccommodation().getAccommodationId())
                                 .distinct()
                                 .toList();
@@ -394,9 +417,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -416,9 +437,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -438,9 +457,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -460,9 +477,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -482,9 +497,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -504,9 +517,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -524,9 +535,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -545,9 +554,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -564,9 +571,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -586,9 +591,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -604,9 +607,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");
@@ -622,9 +623,7 @@ public class BookingService {
                 UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User auth provider not found"));
 
-                Set<Long> staffAccommodations = userAuthProvider.getUser().getAccommodationStaffs().stream()
-                                .map(staff -> staff.getAccommodation().getAccommodationId())
-                                .collect(Collectors.toSet());
+                Set<Long> staffAccommodations = getHostAccommodationIds(userAuthProvider);
 
                 if (!staffAccommodations.contains(accommodationId)) {
                         throw new AccessDeniedException("Accommodation not found for the provider");

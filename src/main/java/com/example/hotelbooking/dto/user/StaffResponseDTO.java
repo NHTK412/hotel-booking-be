@@ -60,6 +60,15 @@ public class StaffResponseDTO {
     @Schema(description = "Trạng thái hoạt động tài khoản", example = "true")
     private Boolean isActive;
 
+    @Schema(description = "Trạng thái tài khoản người dùng", example = "ACTIVE")
+    private com.example.hotelbooking.enums.StatusEnum status;
+
+    @Schema(description = "ID liên kết nhân sự tại cơ sở lưu trú (AccommodationStaff ID)", example = "1")
+    private Long accommodationStaffId;
+
+    @Schema(description = "Trạng thái nhân sự đã nghỉ việc hay chưa (true: đã nghỉ, false: đang làm việc)", example = "false")
+    private Boolean isDeleted;
+
     @Schema(description = "ID cơ sở lưu trú phụ trách", example = "5")
     private Long accommodationId;
 

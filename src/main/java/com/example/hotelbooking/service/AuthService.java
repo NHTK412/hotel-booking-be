@@ -26,6 +26,7 @@ import com.example.hotelbooking.dto.auth.OauthLoginDTO;
 import com.example.hotelbooking.dto.auth.RefreshTokenRequestDTO;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.GenderEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.InvalidCredentialsException;
@@ -71,7 +72,11 @@ public class AuthService {
 
         User user = userAuthProvider.getUser();
 
-        if (user.getIsActive() == null || !user.getIsActive()) {
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new InvalidCredentialsException("Tài khoản đã bị xóa hoặc không tồn tại");
+        }
+
+        if (user.getIsActive() == null || !user.getIsActive() || user.getStatus() == StatusEnum.INACTIVE) {
             throw new InvalidCredentialsException("User account is inactive");
         }
 
@@ -180,6 +185,14 @@ public class AuthService {
                 throw new com.example.hotelbooking.exception.AccessDeniedException(
                         "Only customer accounts can log in using OAuth. Host and Admin must log in with password.");
             }
+        }
+
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new InvalidCredentialsException("Tài khoản đã bị xóa hoặc không tồn tại");
+        }
+
+        if (user.getIsActive() == null || !user.getIsActive() || user.getStatus() == StatusEnum.INACTIVE) {
+            throw new InvalidCredentialsException("User account is inactive");
         }
 
         return buildAuthResponse(user, userAuthProvider.getProviderUserId());

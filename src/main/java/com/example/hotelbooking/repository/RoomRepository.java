@@ -25,7 +25,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             FROM Room r
             JOIN r.roomType rt
             WHERE rt.roomtypeId = :roomTypeId
-                AND r.status = 'ACTIVE'
+                AND rt.isDeleted = false
+                AND rt.status = com.example.hotelbooking.enums.StatusEnum.ACTIVE
+                AND r.isDeleted = false
+                AND r.status = com.example.hotelbooking.enums.StatusEnum.ACTIVE
                 AND NOT EXISTS (
                     SELECT 1
                     FROM Booking b

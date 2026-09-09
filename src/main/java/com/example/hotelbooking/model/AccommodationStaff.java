@@ -34,6 +34,9 @@ public class AccommodationStaff extends BaseEntity {
     @Column(name = "roleStaff", nullable = false)
     private AccommodationStaffRoleEnum role;
 
+    @Column(name = "isDeleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @ManyToOne
     @JoinColumn(name = "accommodationId")
     private Accommodation accommodation;

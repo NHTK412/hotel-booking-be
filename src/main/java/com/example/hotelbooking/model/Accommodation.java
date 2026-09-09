@@ -40,6 +40,9 @@ public class Accommodation extends BaseEntity {
     @Column(name = "accommodationId")
     private Long accommodationId;
 
+    @Column(name = "isDeleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @Column(name = "accommodationName", nullable = false)
     private String accommodationName;
 

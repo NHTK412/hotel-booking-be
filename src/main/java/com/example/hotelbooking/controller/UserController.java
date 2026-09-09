@@ -5,7 +5,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,6 +21,7 @@ import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.security.CustomUserDetails;
 import com.example.hotelbooking.service.UserService;
 import com.example.hotelbooking.util.ApiResponse;
@@ -79,29 +82,93 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Lấy danh sách nhân sự theo cơ sở lưu trú (Admin & Host)", description = "Admin xem được mọi khách sạn. Host chỉ xem được khách sạn mình quản lý.")
+    @Operation(summary = "Lấy danh sách nhân sự theo cơ sở lưu trú (Admin & Host)", description = "Admin xem được mọi khách sạn. Host chỉ xem được khách sạn mình quản lý. Hỗ trợ lọc theo trạng thái đã nghỉ việc (isDeleted).")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
     @GetMapping("/accommodation/{accommodationId}")
     public ResponseEntity<ApiResponse<List<StaffResponseDTO>>> getStaffByAccommodation(
             @AuthenticationPrincipal CustomUserDetails customerUserDetails,
-            @PathVariable Long accommodationId) {
+            @PathVariable Long accommodationId,
+            @RequestParam(required = false, defaultValue = "false") Boolean isDeleted) {
         String providerId = customerUserDetails.getUsername();
-        List<StaffResponseDTO> staffList = userService.getStaffByAccommodation(providerId, accommodationId);
+        List<StaffResponseDTO> staffList = userService.getStaffByAccommodation(providerId, accommodationId, isDeleted);
         ApiResponse<List<StaffResponseDTO>> response = new ApiResponse<>(true, "Lấy danh sách nhân sự thành công", staffList);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Lấy danh sách toàn bộ nhân sự / quản lý hệ thống (Admin & Host)", description = "Lấy danh sách nhân sự (không bao gồm khách hàng). Admin lấy toàn bộ hoặc lọc theo cơ sở, Host lấy trong phạm vi cơ sở mình quản lý.")
+    @Operation(summary = "Lấy danh sách toàn bộ nhân sự / quản lý hệ thống (Admin & Host)", description = "Lấy danh sách nhân sự (không bao gồm khách hàng). Admin lấy toàn bộ hoặc lọc theo cơ sở, Host lấy trong phạm vi cơ sở mình quản lý. Hỗ trợ lọc theo trạng thái đã nghỉ việc (isDeleted).")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
     @GetMapping("/staff")
     public ResponseEntity<ApiResponse<List<StaffResponseDTO>>> getAllStaff(
             @AuthenticationPrincipal CustomUserDetails customerUserDetails,
             @RequestParam(required = false) Long accommodationId,
             @RequestParam(required = false) AccommodationStaffRoleEnum role,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "false") Boolean isDeleted) {
         String providerId = customerUserDetails.getUsername();
-        List<StaffResponseDTO> staffList = userService.getAllStaff(providerId, accommodationId, role, keyword);
+        List<StaffResponseDTO> staffList = userService.getAllStaff(providerId, accommodationId, role, keyword, isDeleted);
         ApiResponse<List<StaffResponseDTO>> response = new ApiResponse<>(true, "Lấy danh sách người dùng hệ thống thành công", staffList);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Khóa hoặc Mở khóa tài khoản người dùng (Admin)", description = "Khóa hoặc kích hoạt lại tài khoản người dùng bằng cách đổi trạng thái status (ACTIVE / INACTIVE).")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{userId}/status")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateUserStatus(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long userId,
+            @RequestParam StatusEnum status) {
+        String providerId = customerUserDetails.getUsername();
+        UserResponseDTO userResponseDTO = userService.updateUserStatus(providerId, userId, status);
+        String message = status == StatusEnum.ACTIVE ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công";
+        ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, message, userResponseDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Xóa mềm nhân viên nghỉ việc tại cơ sở lưu trú (Admin & Host)", description = "Đánh dấu nhân viên đã nghỉ làm việc tại cơ sở lưu trú (isDeleted = true). Nhân viên sẽ mất quyền truy cập vào khách sạn này.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @DeleteMapping("/staff/{accommodationStaffId}")
+    public ResponseEntity<ApiResponse<Void>> deleteStaff(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long accommodationStaffId) {
+        String providerId = customerUserDetails.getUsername();
+        userService.deleteStaff(providerId, accommodationStaffId);
+        ApiResponse<Void> response = new ApiResponse<>(true, "Đánh dấu nhân viên nghỉ việc thành công", null);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Khôi phục nhân viên đi làm lại tại cơ sở lưu trú (Admin & Host)", description = "Khôi phục trạng thái làm việc của nhân viên tại cơ sở lưu trú (isDeleted = false).")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @PatchMapping("/staff/{accommodationStaffId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreStaff(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long accommodationStaffId) {
+        String providerId = customerUserDetails.getUsername();
+        userService.restoreStaff(providerId, accommodationStaffId);
+        ApiResponse<Void> response = new ApiResponse<>(true, "Khôi phục nhân viên đi làm lại thành công", null);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Xóa mềm người dùng (Chỉ dành cho Admin)", description = "Xóa mềm tài khoản người dùng trong hệ thống (isDeleted = true)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long userId) {
+        String providerId = customerUserDetails.getUsername();
+        userService.deleteUser(providerId, userId);
+        ApiResponse<Void> response = new ApiResponse<>(true, "Xóa người dùng thành công", null);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Khôi phục người dùng đã xóa mềm (Chỉ dành cho Admin)", description = "Khôi phục tài khoản người dùng đã bị xóa mềm (isDeleted = false)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{userId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreUser(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long userId) {
+        String providerId = customerUserDetails.getUsername();
+        userService.restoreUser(providerId, userId);
+        ApiResponse<Void> response = new ApiResponse<>(true, "Khôi phục người dùng thành công", null);
         return ResponseEntity.ok(response);
     }
 }

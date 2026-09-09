@@ -28,8 +28,10 @@ import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.enums.GenderEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.AccessDeniedException;
+import com.example.hotelbooking.exception.BadRequestException;
 import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.model.Accommodation;
 import com.example.hotelbooking.model.AccommodationStaff;
@@ -292,8 +294,9 @@ class UserServiceStaffRegistrationTest {
             staff.setUser(hostManagerUser);
             staff.setAccommodation(accommodation1);
             staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staff.setIsDeleted(false);
 
-            when(accommodationStaffRepository.findByAccommodation_AccommodationId(10L))
+            when(accommodationStaffRepository.findByAccommodation_AccommodationIdAndIsDeleted(10L, false))
                     .thenReturn(List.of(staff));
 
             List<StaffResponseDTO> result = userService.getStaffByAccommodation("admin@hotel.com", 10L);
@@ -313,8 +316,9 @@ class UserServiceStaffRegistrationTest {
             staff.setUser(hostManagerUser);
             staff.setAccommodation(accommodation1);
             staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staff.setIsDeleted(false);
 
-            when(accommodationStaffRepository.findByAccommodation_AccommodationId(10L))
+            when(accommodationStaffRepository.findByAccommodation_AccommodationIdAndIsDeleted(10L, false))
                     .thenReturn(List.of(staff));
 
             List<StaffResponseDTO> result = userService.getStaffByAccommodation("manager@hotel.com", 10L);
@@ -349,8 +353,9 @@ class UserServiceStaffRegistrationTest {
             staff.setUser(hostManagerUser);
             staff.setAccommodation(accommodation1);
             staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staff.setIsDeleted(false);
 
-            when(accommodationStaffRepository.searchStaff(null, null, "Manager"))
+            when(accommodationStaffRepository.searchStaff(null, null, "Manager", false))
                     .thenReturn(List.of(staff));
 
             List<StaffResponseDTO> result = userService.getAllStaff("admin@hotel.com", null, null, "Manager");
@@ -369,14 +374,168 @@ class UserServiceStaffRegistrationTest {
             staff.setUser(hostManagerUser);
             staff.setAccommodation(accommodation1);
             staff.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staff.setIsDeleted(false);
 
-            when(accommodationStaffRepository.searchStaffForAccommodations(List.of(10L), null, null, null))
+            when(accommodationStaffRepository.searchStaffForAccommodations(List.of(10L), null, null, null, false))
                     .thenReturn(List.of(staff));
 
             List<StaffResponseDTO> result = userService.getAllStaff("manager@hotel.com", null, null, null);
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getName()).isEqualTo("Host Manager");
+        }
+    }
+
+    @Nested
+    @DisplayName("User Status & Staff Soft Delete Tests")
+    class UserStatusAndStaffSoftDeleteTests {
+
+        @Test
+        @DisplayName("Admin locks user account by setting status to INACTIVE")
+        void admin_lockUserAccount_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(hostManagerUser));
+            when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+            UserResponseDTO response = userService.updateUserStatus("admin@hotel.com", 2L, StatusEnum.INACTIVE);
+
+            assertThat(response.getStatus()).isEqualTo(StatusEnum.INACTIVE);
+            assertThat(response.getIsActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Host cannot update user status, throws AccessDeniedException")
+        void host_updateUserStatus_throwsAccessDenied() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            assertThatThrownBy(() -> userService.updateUserStatus("manager@hotel.com", 2L, StatusEnum.INACTIVE))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Chỉ Admin");
+        }
+
+        @Test
+        @DisplayName("Host Manager soft deletes (terminates) staff from accommodation")
+        void hostManager_deleteStaff_success() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            User receptionistUser = new User();
+            receptionistUser.setId(3L);
+            receptionistUser.setName("Receptionist");
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setAccommodationStaffId(100L);
+            staff.setUser(receptionistUser);
+            staff.setAccommodation(accommodation1);
+            staff.setRole(AccommodationStaffRoleEnum.ROLE_RECEPTIONIST);
+            staff.setIsDeleted(false);
+
+            when(accommodationStaffRepository.findById(100L)).thenReturn(Optional.of(staff));
+
+            userService.deleteStaff("manager@hotel.com", 100L);
+
+            assertThat(staff.getIsDeleted()).isTrue();
+            verify(accommodationStaffRepository).save(staff);
+        }
+
+        @Test
+        @DisplayName("Host Manager deleting already resigned staff throws BadRequestException")
+        void hostManager_deleteStaff_alreadyResigned_throwsBadRequest() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            User receptionistUser = new User();
+            receptionistUser.setId(3L);
+            receptionistUser.setName("Receptionist");
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setAccommodationStaffId(100L);
+            staff.setUser(receptionistUser);
+            staff.setAccommodation(accommodation1);
+            staff.setIsDeleted(true);
+
+            when(accommodationStaffRepository.findById(100L)).thenReturn(Optional.of(staff));
+
+            assertThatThrownBy(() -> userService.deleteStaff("manager@hotel.com", 100L))
+                    .isInstanceOf(BadRequestException.class)
+                    .hasMessageContaining("đã được đánh dấu nghỉ làm trước đó");
+        }
+
+        @Test
+        @DisplayName("Host Manager restores resigned staff to active duty")
+        void hostManager_restoreStaff_success() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            User receptionistUser = new User();
+            receptionistUser.setId(3L);
+            receptionistUser.setName("Receptionist");
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setAccommodationStaffId(100L);
+            staff.setUser(receptionistUser);
+            staff.setAccommodation(accommodation1);
+            staff.setIsDeleted(true);
+
+            when(accommodationStaffRepository.findById(100L)).thenReturn(Optional.of(staff));
+
+            userService.restoreStaff("manager@hotel.com", 100L);
+
+            assertThat(staff.getIsDeleted()).isFalse();
+            verify(accommodationStaffRepository).save(staff);
+        }
+
+        @Test
+        @DisplayName("Resigned Host Manager cannot register new staff, throws AccessDeniedException")
+        void resignedManager_cannotRegisterStaff_throwsAccessDenied() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            // Mark manager as resigned (isDeleted = true)
+            hostManagerUser.getAccommodationStaffs().get(0).setIsDeleted(true);
+
+            CreateHostDTO dto = new CreateHostDTO();
+            dto.setAccommodationId(10L);
+            dto.setHostRole(AccommodationStaffRoleEnum.ROLE_RECEPTIONIST);
+            dto.setEmail("newstaff@hotel.com");
+
+            assertThatThrownBy(() -> userService.registerHost("manager@hotel.com", dto))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Bạn không có quyền quản lý khách sạn này");
+        }
+
+        @Test
+        @DisplayName("Admin soft deletes user successfully")
+        void admin_deleteUser_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+            User target = new User();
+            target.setId(5L);
+            target.setIsDeleted(false);
+            when(userRepository.findById(5L)).thenReturn(Optional.of(target));
+
+            userService.deleteUser("admin@hotel.com", 5L);
+
+            assertThat(target.getIsDeleted()).isTrue();
+            verify(userRepository).save(target);
+        }
+
+        @Test
+        @DisplayName("Admin restores soft deleted user successfully")
+        void admin_restoreUser_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+            User target = new User();
+            target.setId(5L);
+            target.setIsDeleted(true);
+            when(userRepository.findById(5L)).thenReturn(Optional.of(target));
+
+            userService.restoreUser("admin@hotel.com", 5L);
+
+            assertThat(target.getIsDeleted()).isFalse();
+            verify(userRepository).save(target);
         }
     }
 }

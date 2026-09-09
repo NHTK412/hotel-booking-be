@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.hotelbooking.enums.AmenityEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -27,7 +28,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "RoomTypes", indexes = {
     @Index(name = "idx_roomtype_accommodation_deleted", columnList = "accommodationId, isDeleted"),
-    @Index(name = "idx_roomtype_capacity_bedroom", columnList = "capacity, bedroom")
+    @Index(name = "idx_roomtype_capacity_bedroom", columnList = "capacity, bedroom"),
+    @Index(name = "idx_roomtype_status_deleted", columnList = "status, isDeleted")
 })
 @Getter
 @Setter
@@ -42,6 +44,13 @@ public class RoomType extends BaseEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private StatusEnum status = StatusEnum.ACTIVE;
+
+    @Column(name = "isDeleted", nullable = false)
+    private Boolean isDeleted = false;
 
     @Column(name = "star")
     private Integer star;

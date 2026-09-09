@@ -41,6 +41,9 @@ public class Room extends BaseEntity {
     @Column(name = "status", nullable = false)
     private StatusEnum status;
 
+    @Column(name = "isDeleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @ManyToOne
     @JoinColumn(name = "roomtypeId", nullable = false)
     private RoomType roomType;

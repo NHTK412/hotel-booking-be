@@ -1,5 +1,7 @@
 package com.example.hotelbooking.dto.roomtype;
 
+import com.example.hotelbooking.enums.StatusEnum;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,4 +23,6 @@ public class RoomTypeSummaryDTO {
 
     private Long accommodationId;
     private String accommodationName;
+    private StatusEnum status;
+    private Boolean isDeleted;
 }
