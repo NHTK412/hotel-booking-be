@@ -7,6 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.HostGroupResponseDTO;
+import com.example.hotelbooking.dto.user.StaffAccommodationAssignmentDTO;
 import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
@@ -261,6 +263,82 @@ public class UserService {
                 }
         }
 
+        public List<HostGroupResponseDTO> getHostsGrouped(String providerId, Long accommodationId, AccommodationStaffRoleEnum role, String keyword) {
+                return getHostsGrouped(providerId, accommodationId, role, keyword, false);
+        }
+
+        public List<HostGroupResponseDTO> getHostsGrouped(String providerId, Long accommodationId, AccommodationStaffRoleEnum role, String keyword, Boolean isDeleted) {
+                UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+                User currentUser = currentAuthProvider.getUser();
+
+                String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+                boolean filterDeleted = Boolean.TRUE.equals(isDeleted);
+
+                List<AccommodationStaff> staffList;
+                if (currentUser.getRole() == UserRoleEnum.ROLE_ADMIN) {
+                        staffList = accommodationStaffRepository.searchStaff(accommodationId, role, cleanKeyword, filterDeleted);
+                } else if (currentUser.getRole() == UserRoleEnum.ROLE_HOST) {
+                        List<Long> managedAccommodationIds = currentUser.getAccommodationStaffs() != null
+                                        ? currentUser.getAccommodationStaffs().stream()
+                                                        .filter(s -> !Boolean.TRUE.equals(s.getIsDeleted())
+                                                                        && s.getAccommodation() != null
+                                                                        && s.getRole() == AccommodationStaffRoleEnum.ROLE_MANAGER)
+                                                        .map(s -> s.getAccommodation().getAccommodationId())
+                                                        .toList()
+                                        : List.of();
+
+                        if (managedAccommodationIds.isEmpty()) {
+                                return List.of();
+                        }
+
+                        if (accommodationId != null && !managedAccommodationIds.contains(accommodationId)) {
+                                throw new AccessDeniedException("Bạn không có quyền xem nhân sự của khách sạn này");
+                        }
+
+                        staffList = accommodationStaffRepository.searchStaffForAccommodations(
+                                        managedAccommodationIds, accommodationId, role, cleanKeyword, filterDeleted);
+                } else {
+                        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+                }
+
+                java.util.Map<Long, HostGroupResponseDTO> groupMap = new java.util.LinkedHashMap<>();
+                for (AccommodationStaff staff : staffList) {
+                        User u = staff.getUser();
+                        HostGroupResponseDTO group = groupMap.computeIfAbsent(u.getId(), id -> HostGroupResponseDTO.builder()
+                                        .id(u.getId())
+                                        .userId(u.getId())
+                                        .name(u.getName())
+                                        .email(u.getEmail())
+                                        .phone(u.getPhone())
+                                        .birthday(u.getBirthday())
+                                        .gender(u.getGender() != null ? u.getGender().getDisplayName() : null)
+                                        .address(u.getAddress())
+                                        .avatarUrl(u.getAvatarUrl())
+                                        .systemRole(u.getRole())
+                                        .status(u.getStatus())
+                                        .isActive(u.getIsActive() != null ? u.getIsActive() : true)
+                                        .isDeleted(u.getIsDeleted())
+                                        .createdAt(u.getCreateAt())
+                                        .accommodations(new java.util.ArrayList<>())
+                                        .build());
+
+                        if (staff.getAccommodation() != null) {
+                                group.getAccommodations().add(StaffAccommodationAssignmentDTO.builder()
+                                                .accommodationStaffId(staff.getAccommodationStaffId())
+                                                .accommodationId(staff.getAccommodation().getAccommodationId())
+                                                .accommodationName(staff.getAccommodation().getAccommodationName())
+                                                .hotelType(staff.getAccommodation().getType())
+                                                .role(staff.getRole())
+                                                .status(staff.getStatus())
+                                                .isDeleted(staff.getIsDeleted())
+                                                .build());
+                        }
+                }
+
+                return new java.util.ArrayList<>(groupMap.values());
+        }
+
         @Transactional
         public UserResponseDTO updateUserStatus(String providerId, Long userId, StatusEnum status) {
                 UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
@@ -344,6 +422,33 @@ public class UserService {
         }
 
         @Transactional
+        public void updateStaffStatus(String providerId, Long accommodationStaffId, StatusEnum status) {
+                UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User not found"));
+                User currentUser = currentAuthProvider.getUser();
+
+                AccommodationStaff staff = accommodationStaffRepository.findById(accommodationStaffId)
+                                .orElseThrow(() -> new NotFoundException("Không tìm thấy thông tin nhân sự với ID: " + accommodationStaffId));
+
+                if (currentUser.getRole() == UserRoleEnum.ROLE_HOST) {
+                        Long accId = staff.getAccommodation() != null ? staff.getAccommodation().getAccommodationId() : null;
+                        boolean isManager = currentUser.getAccommodationStaffs() != null && currentUser.getAccommodationStaffs().stream()
+                                        .anyMatch(s -> !Boolean.TRUE.equals(s.getIsDeleted())
+                                                        && s.getAccommodation() != null
+                                                        && s.getAccommodation().getAccommodationId().equals(accId)
+                                                        && s.getRole() == AccommodationStaffRoleEnum.ROLE_MANAGER);
+                        if (!isManager) {
+                                throw new AccessDeniedException("Bạn không có quyền quản lý nhân sự tại khách sạn này");
+                        }
+                } else if (currentUser.getRole() != UserRoleEnum.ROLE_ADMIN) {
+                        throw new AccessDeniedException("Bạn không có quyền thực hiện thao tác này");
+                }
+
+                staff.setStatus(status);
+                accommodationStaffRepository.save(staff);
+        }
+
+        @Transactional
         public void deleteUser(String providerId, Long userId) {
                 UserAuthProvider currentAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -403,6 +508,7 @@ public class UserService {
                                 .role(staff.getRole())
                                 .staffRole(staff.getRole())
                                 .status(u.getStatus())
+                                .staffStatus(staff.getStatus())
                                 .isActive(u.getIsActive() != null ? u.getIsActive() : true)
                                 .isDeleted(staff.getIsDeleted())
                                 .accommodationId(acc != null ? acc.getAccommodationId() : null)

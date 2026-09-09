@@ -34,6 +34,10 @@ public class AccommodationStaff extends BaseEntity {
     @Column(name = "roleStaff", nullable = false)
     private AccommodationStaffRoleEnum role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private com.example.hotelbooking.enums.StatusEnum status = com.example.hotelbooking.enums.StatusEnum.ACTIVE;
+
     @Column(name = "isDeleted", nullable = false)
     private Boolean isDeleted = false;
 

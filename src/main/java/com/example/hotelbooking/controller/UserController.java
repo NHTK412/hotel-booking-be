@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.HostGroupResponseDTO;
 import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserRequestDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
@@ -110,6 +111,24 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Lấy danh sách Host / Nhân sự gom nhóm theo người dùng kèm danh sách đơn vị trực thuộc (Admin & Host)", 
+               description = "Hiển thị danh sách người dùng với mảng các đơn vị trực thuộc (accommodations). " +
+                             "Với Admin: thấy toàn bộ đơn vị trực thuộc của host/nhân sự. " +
+                             "Với Host: chỉ thấy các đơn vị trực thuộc nằm trong phạm vi cơ sở mình quản lý.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @GetMapping({"/hosts", "/hosts-grouped"})
+    public ResponseEntity<ApiResponse<List<HostGroupResponseDTO>>> getHostsGrouped(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @RequestParam(required = false) Long accommodationId,
+            @RequestParam(required = false) AccommodationStaffRoleEnum role,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "false") Boolean isDeleted) {
+        String providerId = customerUserDetails.getUsername();
+        List<HostGroupResponseDTO> hostList = userService.getHostsGrouped(providerId, accommodationId, role, keyword, isDeleted);
+        ApiResponse<List<HostGroupResponseDTO>> response = new ApiResponse<>(true, "Lấy danh sách host và đơn vị trực thuộc thành công", hostList);
+        return ResponseEntity.ok(response);
+    }
+
     @Operation(summary = "Khóa hoặc Mở khóa tài khoản người dùng (Admin)", description = "Khóa hoặc kích hoạt lại tài khoản người dùng bằng cách đổi trạng thái status (ACTIVE / INACTIVE).")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/status")
@@ -121,6 +140,20 @@ public class UserController {
         UserResponseDTO userResponseDTO = userService.updateUserStatus(providerId, userId, status);
         String message = status == StatusEnum.ACTIVE ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công";
         ApiResponse<UserResponseDTO> response = new ApiResponse<>(true, message, userResponseDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Khóa hoặc Mở khóa nhân sự tại một cơ sở lưu trú (Admin & Host)", description = "Khóa hoặc mở khóa quyền làm việc của nhân sự tại một cơ sở lưu trú cụ thể (ACTIVE / INACTIVE).")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOST')")
+    @PatchMapping("/staff/{accommodationStaffId}/status")
+    public ResponseEntity<ApiResponse<Void>> updateStaffStatus(
+            @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+            @PathVariable Long accommodationStaffId,
+            @RequestParam StatusEnum status) {
+        String providerId = customerUserDetails.getUsername();
+        userService.updateStaffStatus(providerId, accommodationStaffId, status);
+        String message = status == StatusEnum.ACTIVE ? "Mở khóa nhân sự tại cơ sở thành công" : "Khóa nhân sự tại cơ sở thành công";
+        ApiResponse<Void> response = new ApiResponse<>(true, message, null);
         return ResponseEntity.ok(response);
     }
 

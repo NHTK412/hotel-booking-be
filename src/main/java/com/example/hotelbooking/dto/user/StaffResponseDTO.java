@@ -63,6 +63,9 @@ public class StaffResponseDTO {
     @Schema(description = "Trạng thái tài khoản người dùng", example = "ACTIVE")
     private com.example.hotelbooking.enums.StatusEnum status;
 
+    @Schema(description = "Trạng thái phân công tại cơ sở này (ACTIVE: đang làm việc, INACTIVE: bị khóa tại cơ sở)", example = "ACTIVE")
+    private com.example.hotelbooking.enums.StatusEnum staffStatus;
+
     @Schema(description = "ID liên kết nhân sự tại cơ sở lưu trú (AccommodationStaff ID)", example = "1")
     private Long accommodationStaffId;
 

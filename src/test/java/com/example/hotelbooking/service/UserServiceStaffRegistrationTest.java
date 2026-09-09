@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.example.hotelbooking.dto.user.CreateHostDTO;
+import com.example.hotelbooking.dto.user.HostGroupResponseDTO;
 import com.example.hotelbooking.dto.user.StaffResponseDTO;
 import com.example.hotelbooking.dto.user.UserResponseDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
@@ -536,6 +537,123 @@ class UserServiceStaffRegistrationTest {
 
             assertThat(target.getIsDeleted()).isFalse();
             verify(userRepository).save(target);
+        }
+
+        @Test
+        @DisplayName("Admin getHostsGrouped groups multiple accommodations under one user")
+        void admin_getHostsGrouped_groupsMultipleAccommodations() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+
+            User hostUser = new User();
+            hostUser.setId(20L);
+            hostUser.setName("Host Multi-Hotel");
+            hostUser.setEmail("multihost@hotel.com");
+            hostUser.setRole(UserRoleEnum.ROLE_HOST);
+            hostUser.setStatus(StatusEnum.ACTIVE);
+
+            Accommodation hotelA = new Accommodation();
+            hotelA.setAccommodationId(101L);
+            hotelA.setAccommodationName("Hotel Alpha");
+
+            Accommodation hotelB = new Accommodation();
+            hotelB.setAccommodationId(102L);
+            hotelB.setAccommodationName("Hotel Beta");
+
+            AccommodationStaff staffA = new AccommodationStaff();
+            staffA.setAccommodationStaffId(1L);
+            staffA.setUser(hostUser);
+            staffA.setAccommodation(hotelA);
+            staffA.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staffA.setStatus(StatusEnum.ACTIVE);
+            staffA.setIsDeleted(false);
+
+            AccommodationStaff staffB = new AccommodationStaff();
+            staffB.setAccommodationStaffId(2L);
+            staffB.setUser(hostUser);
+            staffB.setAccommodation(hotelB);
+            staffB.setRole(AccommodationStaffRoleEnum.ROLE_MANAGER);
+            staffB.setStatus(StatusEnum.ACTIVE);
+            staffB.setIsDeleted(false);
+
+            when(accommodationStaffRepository.searchStaff(null, null, null, false))
+                    .thenReturn(List.of(staffA, staffB));
+
+            List<HostGroupResponseDTO> result = userService.getHostsGrouped("admin@hotel.com", null, null, null, false);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getId()).isEqualTo(20L);
+            assertThat(result.get(0).getAccommodations()).hasSize(2);
+            assertThat(result.get(0).getAccommodations().get(0).getAccommodationName()).isEqualTo("Hotel Alpha");
+            assertThat(result.get(0).getAccommodations().get(1).getAccommodationName()).isEqualTo("Hotel Beta");
+        }
+
+        @Test
+        @DisplayName("Host Manager getHostsGrouped only returns shared accommodations")
+        void hostManager_getHostsGrouped_onlySharedAccommodations() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            User staffUser = new User();
+            staffUser.setId(30L);
+            staffUser.setName("Shared Staff");
+            staffUser.setEmail("shared@hotel.com");
+            staffUser.setRole(UserRoleEnum.ROLE_HOST);
+
+            AccommodationStaff staffOnlyAcc1 = new AccommodationStaff();
+            staffOnlyAcc1.setAccommodationStaffId(5L);
+            staffOnlyAcc1.setUser(staffUser);
+            staffOnlyAcc1.setAccommodation(accommodation1); // id = 10L (managed by hostManager)
+            staffOnlyAcc1.setRole(AccommodationStaffRoleEnum.ROLE_RECEPTIONIST);
+            staffOnlyAcc1.setStatus(StatusEnum.ACTIVE);
+            staffOnlyAcc1.setIsDeleted(false);
+
+            when(accommodationStaffRepository.searchStaffForAccommodations(List.of(10L), null, null, null, false))
+                    .thenReturn(List.of(staffOnlyAcc1));
+
+            List<HostGroupResponseDTO> result = userService.getHostsGrouped("manager@hotel.com", null, null, null, false);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getId()).isEqualTo(30L);
+            assertThat(result.get(0).getAccommodations()).hasSize(1);
+            assertThat(result.get(0).getAccommodations().get(0).getAccommodationId()).isEqualTo(10L);
+        }
+
+        @Test
+        @DisplayName("Admin updates staff assignment status (lock / unlock at unit)")
+        void admin_updateStaffStatus_success() {
+            when(userAuthProviderRepository.findByProviderUserId("admin@hotel.com"))
+                    .thenReturn(Optional.of(adminAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setAccommodationStaffId(10L);
+            staff.setStatus(StatusEnum.ACTIVE);
+
+            when(accommodationStaffRepository.findById(10L)).thenReturn(Optional.of(staff));
+
+            userService.updateStaffStatus("admin@hotel.com", 10L, StatusEnum.INACTIVE);
+
+            assertThat(staff.getStatus()).isEqualTo(StatusEnum.INACTIVE);
+            verify(accommodationStaffRepository).save(staff);
+        }
+
+        @Test
+        @DisplayName("Host Manager updates staff status at managed accommodation")
+        void hostManager_updateStaffStatus_success() {
+            when(userAuthProviderRepository.findByProviderUserId("manager@hotel.com"))
+                    .thenReturn(Optional.of(hostManagerAuthProvider));
+
+            AccommodationStaff staff = new AccommodationStaff();
+            staff.setAccommodationStaffId(11L);
+            staff.setAccommodation(accommodation1);
+            staff.setStatus(StatusEnum.ACTIVE);
+
+            when(accommodationStaffRepository.findById(11L)).thenReturn(Optional.of(staff));
+
+            userService.updateStaffStatus("manager@hotel.com", 11L, StatusEnum.INACTIVE);
+
+            assertThat(staff.getStatus()).isEqualTo(StatusEnum.INACTIVE);
+            verify(accommodationStaffRepository).save(staff);
         }
     }
 }
