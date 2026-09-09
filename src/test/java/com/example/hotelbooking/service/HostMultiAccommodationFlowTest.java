@@ -28,13 +28,17 @@ import org.springframework.data.domain.Pageable;
 
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
+import com.example.hotelbooking.dto.room.RoomSummaryDTO;
+import com.example.hotelbooking.dto.room.UpdateRoomDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
 import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.enums.AccommodationTypeEnum;
 import com.example.hotelbooking.enums.AuthProviderTypeEnum;
 import com.example.hotelbooking.enums.BookingStatusEnum;
+import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.enums.UserRoleEnum;
 import com.example.hotelbooking.exception.AccessDeniedException;
+import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Accommodation;
 import com.example.hotelbooking.model.AccommodationStaff;
@@ -252,6 +256,96 @@ class HostMultiAccommodationFlowTest {
 
             assertThrows(AccessDeniedException.class,
                     () -> roomTypeService.getHostRoomTypes("host@hotel.com", 999L, pageable));
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests for RoomTypeService.updateRoom (Physical Room)")
+    class UpdatePhysicalRoomTests {
+
+        @Test
+        @DisplayName("Should update physical room successfully")
+        void shouldUpdatePhysicalRoomSuccessfully() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            Room r1 = new Room();
+            r1.setRoomId(501L);
+            r1.setName("101");
+            r1.setStatus(StatusEnum.ACTIVE);
+            r1.setIsDeleted(false);
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setAccommodation(hotel1);
+            rt.setRooms(new ArrayList<>(List.of(r1)));
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+
+            UpdateRoomDTO dto = UpdateRoomDTO.builder()
+                    .roomNumber("101A")
+                    .status(StatusEnum.INACTIVE)
+                    .build();
+
+            RoomSummaryDTO result = roomTypeService.updateRoom("host@hotel.com", 101L, 501L, dto);
+
+            assertNotNull(result);
+            assertEquals("101A", result.getRoomNumber());
+            assertEquals(StatusEnum.INACTIVE, result.getStatus());
+        }
+
+        @Test
+        @DisplayName("Should throw ConflictException when new roomNumber duplicates an existing room")
+        void shouldThrowConflictWhenRoomNumberDuplicates() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            Room r1 = new Room();
+            r1.setRoomId(501L);
+            r1.setName("101");
+            r1.setStatus(StatusEnum.ACTIVE);
+            r1.setIsDeleted(false);
+
+            Room r2 = new Room();
+            r2.setRoomId(502L);
+            r2.setName("102");
+            r2.setStatus(StatusEnum.ACTIVE);
+            r2.setIsDeleted(false);
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setAccommodation(hotel1);
+            rt.setRooms(new ArrayList<>(List.of(r1, r2)));
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+
+            UpdateRoomDTO dto = UpdateRoomDTO.builder()
+                    .roomNumber("102")
+                    .build();
+
+            assertThrows(ConflictException.class,
+                    () -> roomTypeService.updateRoom("host@hotel.com", 101L, 501L, dto));
+        }
+
+        @Test
+        @DisplayName("Should throw AccessDeniedException if Host does not manage accommodation")
+        void shouldThrowAccessDeniedWhenHostDoesNotManageAccommodation() {
+            when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
+                    .thenReturn(Optional.of(hostAuthProvider));
+
+            Accommodation unmanaged = new Accommodation();
+            unmanaged.setAccommodationId(999L);
+
+            RoomType rt = new RoomType();
+            rt.setRoomtypeId(101L);
+            rt.setAccommodation(unmanaged);
+
+            when(roomTypeRepository.findById(101L)).thenReturn(Optional.of(rt));
+
+            UpdateRoomDTO dto = UpdateRoomDTO.builder().roomNumber("101A").build();
+
+            assertThrows(AccessDeniedException.class,
+                    () -> roomTypeService.updateRoom("host@hotel.com", 101L, 501L, dto));
         }
     }
 

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.room.RoomRequestDTO;
 import com.example.hotelbooking.dto.room.RoomSummaryDTO;
+import com.example.hotelbooking.dto.room.UpdateRoomDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeDetailDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeRequestDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
@@ -226,6 +227,26 @@ public class RoomTypeController {
                 ApiResponse<List<RoomSummaryDTO>> response = new ApiResponse<>(true,
                                 "Thêm phòng vật lý thành công",
                                 addedRooms);
+                return ResponseEntity.ok(response);
+        }
+
+        @Operation(summary = "Cập nhật phòng vật lý (Host)", description = "Chỉnh sửa tên/số phòng và trạng thái hoạt động của phòng vật lý")
+        @PreAuthorize("hasAnyRole('HOST')")
+        @PutMapping("/{roomTypeId}/rooms/{roomId}")
+        public ResponseEntity<ApiResponse<RoomSummaryDTO>> updateRoom(
+                        @PathVariable Long roomTypeId,
+                        @PathVariable Long roomId,
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+                        @Valid @RequestBody UpdateRoomDTO updateRoomDTO) {
+                RoomSummaryDTO updatedRoom = roomTypeService.updateRoom(
+                                customerUserDetails.getProviderId(),
+                                roomTypeId,
+                                roomId,
+                                updateRoomDTO);
+
+                ApiResponse<RoomSummaryDTO> response = new ApiResponse<>(true,
+                                "Cập nhật phòng vật lý thành công",
+                                updatedRoom);
                 return ResponseEntity.ok(response);
         }
 

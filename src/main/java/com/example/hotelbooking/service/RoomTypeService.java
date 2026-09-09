@@ -9,11 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.room.RoomRequestDTO;
 import com.example.hotelbooking.dto.room.RoomSummaryDTO;
+import com.example.hotelbooking.dto.room.UpdateRoomDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeDetailDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeRequestDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
 import com.example.hotelbooking.enums.StatusEnum;
 import com.example.hotelbooking.exception.AccessDeniedException;
+import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Accommodation;
 import com.example.hotelbooking.model.AccommodationStaff;
@@ -205,11 +207,7 @@ public class RoomTypeService {
 
         roomTypeRepository.save(roomType);
 
-        return roomType.getRooms().stream().map(room -> RoomSummaryDTO.builder()
-                .roomId(room.getRoomId())
-                .roomNumber(room.getName())
-                .isDeleted(room.getIsDeleted())
-                .build()).toList();
+        return roomType.getRooms().stream().map(this::mapToRoomSummaryDTO).toList();
     }
 
     @Transactional
@@ -227,22 +225,58 @@ public class RoomTypeService {
 
         roomTypeRepository.save(roomType);
 
-        return roomType.getRooms().stream().map(room -> RoomSummaryDTO.builder()
-                .roomId(room.getRoomId())
-                .roomNumber(room.getName())
-                .isDeleted(room.getIsDeleted())
-                .build()).toList();
+        return roomType.getRooms().stream().map(this::mapToRoomSummaryDTO).toList();
+    }
+
+    @Transactional
+    public RoomSummaryDTO updateRoom(String providerId, Long roomTypeId, Long roomId,
+            UpdateRoomDTO updateRoomDTO) {
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        RoomType roomType = getRoomType(roomTypeId);
+
+        ensureHostHasAccommodation(userAuthProvider, roomType.getAccommodation().getAccommodationId());
+
+        Room room = roomType.getRooms().stream()
+                .filter(r -> r.getRoomId().equals(roomId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(
+                        "Room not found with id: " + roomId + " in room type: " + roomTypeId));
+
+        String newRoomNumber = updateRoomDTO.getRoomNumber() != null ? updateRoomDTO.getRoomNumber().trim() : null;
+        if (newRoomNumber != null && !newRoomNumber.isBlank()) {
+            boolean duplicate = roomType.getRooms().stream()
+                    .anyMatch(r -> !r.getRoomId().equals(roomId) &&
+                            Boolean.FALSE.equals(r.getIsDeleted()) &&
+                            newRoomNumber.equalsIgnoreCase(r.getName()));
+            if (duplicate) {
+                throw new ConflictException("Số phòng '" + newRoomNumber + "' đã tồn tại trong loại phòng này");
+            }
+            room.setName(newRoomNumber);
+        }
+
+        if (updateRoomDTO.getStatus() != null) {
+            room.setStatus(updateRoomDTO.getStatus());
+        }
+
+        roomTypeRepository.save(roomType);
+
+        return mapToRoomSummaryDTO(room);
     }
 
     public List<RoomSummaryDTO> getRoomsByRoomType(Long roomTypeId) {
         RoomType roomType = roomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new NotFoundException("Room type not found with id: " + roomTypeId));
 
-        return roomType.getRooms().stream().map(room -> RoomSummaryDTO.builder()
+        return roomType.getRooms().stream().map(this::mapToRoomSummaryDTO).toList();
+    }
+
+    private RoomSummaryDTO mapToRoomSummaryDTO(Room room) {
+        return RoomSummaryDTO.builder()
                 .roomId(room.getRoomId())
                 .roomNumber(room.getName())
+                .status(room.getStatus())
                 .isDeleted(room.getIsDeleted())
-                .build()).toList();
+                .build();
     }
 
     private RoomTypeDetailDTO mapToRoomTypeDetailDTO(RoomType roomType) {
