@@ -26,7 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
+import com.example.hotelbooking.dto.accommodation.AccommodationInfoHostDTO;
 import com.example.hotelbooking.dto.booking.BookingSummaryDTO;
 import com.example.hotelbooking.dto.room.RoomSummaryDTO;
 import com.example.hotelbooking.dto.room.UpdateRoomDTO;
@@ -141,11 +141,11 @@ class HostMultiAccommodationFlowTest {
             when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
                     .thenReturn(Optional.of(hostAuthProvider));
 
-            List<AccommodationSummaryDTO> results = accommodationService.getMyAccommodations("host@hotel.com");
+            List<AccommodationInfoHostDTO> results = accommodationService.getMyAccommodations("host@hotel.com");
 
             assertNotNull(results);
             assertEquals(2, results.size());
-            List<Long> ids = results.stream().map(AccommodationSummaryDTO::getAccommodationId).toList();
+            List<Long> ids = results.stream().map(AccommodationInfoHostDTO::getAccommodationId).toList();
             assertTrue(ids.contains(10L));
             assertTrue(ids.contains(20L));
         }
@@ -157,7 +157,7 @@ class HostMultiAccommodationFlowTest {
             when(userAuthProviderRepository.findByProviderUserId("host@hotel.com"))
                     .thenReturn(Optional.of(hostAuthProvider));
 
-            List<AccommodationSummaryDTO> results = accommodationService.getMyAccommodations("host@hotel.com");
+            List<AccommodationInfoHostDTO> results = accommodationService.getMyAccommodations("host@hotel.com");
 
             assertNotNull(results);
             assertEquals(1, results.size());

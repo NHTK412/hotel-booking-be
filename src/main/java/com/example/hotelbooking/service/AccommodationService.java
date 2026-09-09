@@ -540,6 +540,8 @@ public class AccommodationService {
 
                 return user.getAccommodationStaffs().stream()
                                 .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
+                                .filter(staff -> staff.getAccommodation() != null
+                                                && !Boolean.TRUE.equals(staff.getAccommodation().getIsDeleted()))
                                 .map(staff -> convertToInfoHostDTO(staff.getAccommodation(), staff.getRole()))
                                 .collect(Collectors.toList());
         }
