@@ -55,6 +55,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                         Pageable pageable);
 
         @Query("""
+                SELECT b
+                FROM Booking b
+                WHERE b.room.roomType.accommodation.accommodationId IN :accommodationIds
+                AND (:status IS NULL OR b.status = :status)
+                """)
+        Page<Booking> findBookingsByHostMultiple(
+                @Param("accommodationIds") List<Long> accommodationIds,
+                @Param("status") BookingStatusEnum status,
+                Pageable pageable);
+
+        @Query("""
                         SELECT COUNT(b)
                         FROM Booking b
                         WHERE b.room.roomType.accommodation.accommodationId = :accommodationId

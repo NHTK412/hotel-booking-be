@@ -16,7 +16,9 @@ public class RoomTypeSummaryDTO {
     private Double discount;
     private String image;
 
-    // Thêm ịa địa chỉ phòng
+    // Thêm địa chỉ phòng
     private String address;
 
+    private Long accommodationId;
+    private String accommodationName;
 }

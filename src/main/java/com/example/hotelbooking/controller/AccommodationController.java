@@ -146,6 +146,21 @@ public class AccommodationController {
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lấy danh sách các cơ sở lưu trú của Host đang đăng nhập", description = "Trả về toàn bộ các khách sạn/resort mà Host đang trực thuộc quản lý (Dùng để chọn cơ sở quản lý)")
+        @PreAuthorize("hasRole('HOST')")
+        @GetMapping("/my")
+        public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getMyAccommodations(
+                        @AuthenticationPrincipal CustomUserDetails userDetails) {
+                final String providerId = userDetails.getUsername();
+                List<AccommodationSummaryDTO> myAccommodations = accommodationService.getMyAccommodations(providerId);
+
+                ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
+                                "Lấy danh sách cơ sở lưu trú của Host thành công",
+                                myAccommodations);
+
+                return ResponseEntity.ok(response);
+        }
+
         @Operation(summary = "Lấy danh sách khách sạn yêu thích (Khách hàng)", description = "Xem danh sách các khách sạn mà khách hàng hiện tại đã đánh dấu yêu thích")
         @PreAuthorize("hasAnyRole('CUSTOMER')")
         @GetMapping("/favorite")

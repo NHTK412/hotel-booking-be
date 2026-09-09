@@ -21,4 +21,8 @@ public class BookingSummaryDTO {
     private LocalDateTime checkInAt;
     private LocalDateTime checkOutAt;
 
+    private Long accommodationId;
+    private String accommodationName;
+    private String roomTypeName;
+    private String roomNumber;
 }

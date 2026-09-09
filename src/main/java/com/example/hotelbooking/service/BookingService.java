@@ -22,6 +22,7 @@ import com.example.hotelbooking.exception.AccessDeniedException;
 import com.example.hotelbooking.exception.BadRequestException;
 import com.example.hotelbooking.exception.ConflictException;
 import com.example.hotelbooking.exception.NotFoundException;
+import com.example.hotelbooking.model.AccommodationStaff;
 import com.example.hotelbooking.model.Booking;
 import com.example.hotelbooking.model.Room;
 import com.example.hotelbooking.model.User;
@@ -314,15 +315,74 @@ public class BookingService {
                                 .findBookingsByHost(accommodationId, status, pageable);
 
                 return bookingsPage.stream()
-                                .map(booking -> BookingSummaryDTO.builder()
-                                                .bookingId(booking.getBookingId())
-                                                .customerName(booking.getCustomerName())
-                                                .customerEmail(booking.getCustomerEmail())
-                                                .customerPhone(booking.getCustomerPhone())
-                                                .status(booking.getStatus().name())
-                                                .finalPrice(booking.getFinalPrice())
-                                                .build())
+                                .map(this::mapToBookingSummaryDTO)
                                 .toList();
+        }
+
+        public List<BookingSummaryDTO> getBookingsForHost(
+                        String providerId, Long accommodationId, BookingStatusEnum status, int page, int size) {
+
+                UserAuthProvider userAuthProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("User auth provider not found"));
+
+                List<AccommodationStaff> staffs = userAuthProvider.getUser().getAccommodationStaffs();
+                if (staffs == null || staffs.isEmpty()) {
+                        return List.of();
+                }
+
+                List<Long> managedAccommodationIds = staffs.stream()
+                                .map(staff -> staff.getAccommodation().getAccommodationId())
+                                .distinct()
+                                .toList();
+
+                Pageable pageable = PageRequest.of(page, size);
+                Page<Booking> bookingsPage;
+
+                if (accommodationId != null) {
+                        if (!managedAccommodationIds.contains(accommodationId)) {
+                                throw new AccessDeniedException("Accommodation not found for the provider");
+                        }
+                        bookingsPage = bookingRepository.findBookingsByHost(accommodationId, status, pageable);
+                } else {
+                        bookingsPage = bookingRepository.findBookingsByHostMultiple(managedAccommodationIds, status, pageable);
+                }
+
+                return bookingsPage.stream()
+                                .map(this::mapToBookingSummaryDTO)
+                                .toList();
+        }
+
+        private BookingSummaryDTO mapToBookingSummaryDTO(Booking booking) {
+                Long accommodationId = null;
+                String accommodationName = null;
+                String roomTypeName = null;
+                String roomNumber = null;
+
+                if (booking.getRoom() != null) {
+                        roomNumber = booking.getRoom().getName();
+                        if (booking.getRoom().getRoomType() != null) {
+                                roomTypeName = booking.getRoom().getRoomType().getName();
+                                if (booking.getRoom().getRoomType().getAccommodation() != null) {
+                                        accommodationId = booking.getRoom().getRoomType().getAccommodation().getAccommodationId();
+                                        accommodationName = booking.getRoom().getRoomType().getAccommodation().getAccommodationName();
+                                }
+                        }
+                }
+
+                return BookingSummaryDTO.builder()
+                                .bookingId(booking.getBookingId())
+                                .customerName(booking.getCustomerName())
+                                .customerEmail(booking.getCustomerEmail())
+                                .customerPhone(booking.getCustomerPhone())
+                                .status(booking.getStatus() != null ? booking.getStatus().name() : null)
+                                .finalPrice(booking.getFinalPrice())
+                                .checkInAt(booking.getCheckInAt())
+                                .checkOutAt(booking.getCheckOutAt())
+                                .accommodationId(accommodationId)
+                                .accommodationName(accommodationName)
+                                .roomTypeName(roomTypeName)
+                                .roomNumber(roomNumber)
+                                .build();
         }
 
         public BookingDetailDTO updateBookingStatusByHost(

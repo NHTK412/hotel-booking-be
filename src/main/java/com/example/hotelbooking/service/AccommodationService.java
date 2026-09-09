@@ -2,6 +2,8 @@ package com.example.hotelbooking.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -499,6 +501,28 @@ public class AccommodationService {
                                 .searchByKeyword(keyword, pageable).toList();
 
                 return accommodations.stream()
+                                .map(this::convertToSummaryDTO)
+                                .toList();
+        }
+
+        public List<AccommodationSummaryDTO> getMyAccommodations(String providerId) {
+                UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
+                                .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
+
+                User user = authProvider.getUser();
+                if (user.getAccommodationStaffs() == null || user.getAccommodationStaffs().isEmpty()) {
+                        return List.of();
+                }
+
+                return user.getAccommodationStaffs().stream()
+                                .map(AccommodationStaff::getAccommodation)
+                                .filter(Objects::nonNull)
+                                .filter(acc -> Boolean.FALSE.equals(acc.getIsDeleted()))
+                                .collect(Collectors.toMap(
+                                                Accommodation::getAccommodationId,
+                                                acc -> acc,
+                                                (existing, duplicate) -> existing))
+                                .values().stream()
                                 .map(this::convertToSummaryDTO)
                                 .toList();
         }

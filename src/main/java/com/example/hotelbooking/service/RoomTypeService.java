@@ -267,15 +267,50 @@ public class RoomTypeService {
                 .findByAccommodation_AccommodationIdAndIsDeletedFalse(accommodationId, pageable)
                 .toList();
 
-        return roomTypes.stream().map(roomType -> RoomTypeSummaryDTO.builder()
+        return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
+    }
+
+    public List<RoomTypeSummaryDTO> getHostRoomTypes(String providerId, Long accommodationId, Pageable pageable) {
+        UserAuthProvider userAuthProvider = getUserAuthProvider(providerId);
+        List<AccommodationStaff> staffs = userAuthProvider.getUser().getAccommodationStaffs();
+        if (staffs == null || staffs.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> managedAccommodationIds = staffs.stream()
+                .map(s -> s.getAccommodation().getAccommodationId())
+                .distinct()
+                .toList();
+
+        if (accommodationId != null) {
+            if (!managedAccommodationIds.contains(accommodationId)) {
+                throw new AccessDeniedException("Accommodation not found with id: " + accommodationId + " for the user.");
+            }
+            List<RoomType> roomTypes = roomTypeRepository
+                    .findByAccommodation_AccommodationIdAndIsDeletedFalse(accommodationId, pageable)
+                    .toList();
+            return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
+        } else {
+            List<RoomType> roomTypes = roomTypeRepository
+                    .findByAccommodation_AccommodationIdInAndIsDeletedFalse(managedAccommodationIds, pageable)
+                    .toList();
+            return roomTypes.stream().map(this::mapToRoomTypeSummaryDTO).toList();
+        }
+    }
+
+    private RoomTypeSummaryDTO mapToRoomTypeSummaryDTO(RoomType roomType) {
+        Accommodation acc = roomType.getAccommodation();
+        return RoomTypeSummaryDTO.builder()
                 .roomtypeId(roomType.getRoomtypeId())
                 .name(roomType.getName())
                 .star(roomType.getStar())
                 .price(roomType.getPrice())
                 .image(roomType.getImage())
                 .discount(roomType.getDiscount())
-                .address(roomType.getAccommodation().getAddress())
-                .build()).toList();
+                .address(acc != null ? acc.getAddress() : null)
+                .accommodationId(acc != null ? acc.getAccommodationId() : null)
+                .accommodationName(acc != null ? acc.getAccommodationName() : null)
+                .build();
     }
 
     private UserAuthProvider getUserAuthProvider(String providerId) {

@@ -145,6 +145,27 @@ public class BookingController {
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lấy danh sách đơn đặt phòng của Host (Chọn cơ sở hoặc tất cả)", description = "Lấy danh sách đơn đặt phòng thuộc cơ sở được chọn hoặc tất cả cơ sở do Host quản lý, hỗ trợ lọc theo trạng thái")
+        @PreAuthorize("hasRole('HOST')")
+        @GetMapping("/host")
+        public ResponseEntity<ApiResponse<List<BookingSummaryDTO>>> getBookingsForHost(
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+                        @RequestParam(required = false) Long accommodationId,
+                        @RequestParam(required = false) BookingStatusEnum status,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+
+                String providerId = customerUserDetails.getProviderId();
+                List<BookingSummaryDTO> bookings = bookingService.getBookingsForHost(
+                                providerId, accommodationId, status, page, size);
+
+                ApiResponse<List<BookingSummaryDTO>> response = new ApiResponse<>(true,
+                                "Lấy danh sách đơn đặt phòng thành công",
+                                bookings);
+
+                return ResponseEntity.ok(response);
+        }
+
         @Operation(summary = "Lọc danh sách đơn đặt theo trạng thái (Host)", description = "Lọc các đơn đặt phòng theo trạng thái cụ thể")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/host/accommodation/{accommodationId}")

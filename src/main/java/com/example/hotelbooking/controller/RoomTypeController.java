@@ -124,6 +124,27 @@ public class RoomTypeController {
                 return ResponseEntity.ok(response);
         }
 
+        @Operation(summary = "Lấy danh sách loại phòng của Host (Chọn cơ sở hoặc tất cả)", description = "Host xem danh sách loại phòng theo cơ sở được chọn (truyền accommodationId) hoặc toàn bộ cơ sở Host quản lý (nếu không truyền)")
+        @PreAuthorize("hasAnyRole('HOST')")
+        @GetMapping("/host")
+        public ResponseEntity<ApiResponse<List<RoomTypeSummaryDTO>>> getHostRoomTypes(
+                        @AuthenticationPrincipal CustomUserDetails customerUserDetails,
+                        @RequestParam(required = false) Long accommodationId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
+                Pageable pageable = PageRequest.of(page, size);
+                List<RoomTypeSummaryDTO> roomTypes = roomTypeService.getHostRoomTypes(
+                                customerUserDetails.getProviderId(),
+                                accommodationId,
+                                pageable);
+
+                ApiResponse<List<RoomTypeSummaryDTO>> response = new ApiResponse<>(true,
+                                "Lấy danh sách loại phòng của Host thành công",
+                                roomTypes);
+
+                return ResponseEntity.ok(response);
+        }
+
         @Operation(summary = "Tạo loại phòng mới (Chủ khách sạn - Host)", description = "Thêm mới một danh mục loại phòng kèm giá, số người tối đa và tiện ích")
         @PreAuthorize("hasAnyRole('HOST')")
         @PostMapping
