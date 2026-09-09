@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 
 import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO.AccommodationDetailDTOBuilder;
+import com.example.hotelbooking.dto.accommodation.AccommodationInfoHostDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationRequestDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.dto.roomtype.RoomTypeSummaryDTO;
+import com.example.hotelbooking.enums.AccommodationStaffRoleEnum;
 import com.example.hotelbooking.enums.AccommodationTypeEnum;
 import com.example.hotelbooking.exception.NotFoundException;
 import com.example.hotelbooking.model.Accommodation;
@@ -112,7 +114,8 @@ public class AccommodationService {
                                         .address(accommodation.getAddress())
                                         .type(accommodation.getType())
                                         .image(accommodation.getImage())
-                                        .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0 : discountMinPricePerNight)
+                                        .discountMinPricePerNight(discountMinPricePerNight == Double.MAX_VALUE ? 0.0
+                                                        : discountMinPricePerNight)
                                         .averageRating(averageRating)
                                         .minPricePerNight(minPricePerNight == Double.MAX_VALUE ? 0.0 : minPricePerNight)
                                         .lat(accommodation.getLatitude())
@@ -331,7 +334,8 @@ public class AccommodationService {
                                 .anyMatch(id -> id.equals(accommodationId));
 
                 if (!hasAccess) {
-                        throw new AccessDeniedException("Bạn không có quyền quản trị hoặc chỉnh sửa cơ sở lưu trú này.");
+                        throw new AccessDeniedException(
+                                        "Bạn không có quyền quản trị hoặc chỉnh sửa cơ sở lưu trú này.");
                 }
         }
 
@@ -361,7 +365,9 @@ public class AccommodationService {
                                 .type(accommodation.getType())
                                 .isFavorite(isFavorite)
                                 .isDeleted(accommodation.getIsDeleted())
-                                .locationId(accommodation.getLocation() != null ? accommodation.getLocation().getLocationId() : null);
+                                .locationId(accommodation.getLocation() != null
+                                                ? accommodation.getLocation().getLocationId()
+                                                : null);
 
                 Double starRating = 0.0;
                 List<RoomTypeSummaryDTO> roomTypeSummaries = new ArrayList<>();
@@ -499,6 +505,21 @@ public class AccommodationService {
                                 .build();
         }
 
+        private AccommodationInfoHostDTO convertToInfoHostDTO(Accommodation accommodation,
+                        AccommodationStaffRoleEnum staffRole) {
+                return AccommodationInfoHostDTO.builder()
+                                .accommodationId(accommodation.getAccommodationId())
+                                .accommodationName(accommodation.getAccommodationName())
+                                .address(accommodation.getAddress())
+                                .type(accommodation.getType())
+                                .staffRole(staffRole)
+                                .image(accommodation.getImage())
+                                .lat(accommodation.getLatitude())
+                                .lng(accommodation.getLongitude())
+                                .isDeleted(accommodation.getIsDeleted())
+                                .build();
+        }
+
         public List<AccommodationSummaryDTO> searchAccommodations(String keyword, Pageable pageable) {
                 List<Accommodation> accommodations = accommodationRepository
                                 .searchByKeyword(keyword, pageable).toList();
@@ -508,7 +529,7 @@ public class AccommodationService {
                                 .toList();
         }
 
-        public List<AccommodationSummaryDTO> getMyAccommodations(String providerId) {
+        public List<AccommodationInfoHostDTO> getMyAccommodations(String providerId) {
                 UserAuthProvider authProvider = userAuthProviderRepository.findByProviderUserId(providerId)
                                 .orElseThrow(() -> new NotFoundException("UserAuthProvider not found"));
 
@@ -519,15 +540,7 @@ public class AccommodationService {
 
                 return user.getAccommodationStaffs().stream()
                                 .filter(staff -> !Boolean.TRUE.equals(staff.getIsDeleted()))
-                                .map(AccommodationStaff::getAccommodation)
-                                .filter(Objects::nonNull)
-                                .filter(acc -> Boolean.FALSE.equals(acc.getIsDeleted()))
-                                .collect(Collectors.toMap(
-                                                Accommodation::getAccommodationId,
-                                                acc -> acc,
-                                                (existing, duplicate) -> existing))
-                                .values().stream()
-                                .map(this::convertToSummaryDTO)
-                                .toList();
+                                .map(staff -> convertToInfoHostDTO(staff.getAccommodation(), staff.getRole()))
+                                .collect(Collectors.toList());
         }
 }

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotelbooking.dto.accommodation.AccommodationDetailDTO;
+import com.example.hotelbooking.dto.accommodation.AccommodationInfoHostDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationRequestDTO;
 import com.example.hotelbooking.dto.accommodation.AccommodationSummaryDTO;
 import com.example.hotelbooking.enums.AccommodationTypeEnum;
@@ -149,12 +150,12 @@ public class AccommodationController {
         @Operation(summary = "Lấy danh sách các cơ sở lưu trú của Host đang đăng nhập", description = "Trả về toàn bộ các khách sạn/resort mà Host đang trực thuộc quản lý (Dùng để chọn cơ sở quản lý)")
         @PreAuthorize("hasRole('HOST')")
         @GetMapping("/my")
-        public ResponseEntity<ApiResponse<List<AccommodationSummaryDTO>>> getMyAccommodations(
+        public ResponseEntity<ApiResponse<List<AccommodationInfoHostDTO>>> getMyAccommodations(
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 final String providerId = userDetails.getUsername();
-                List<AccommodationSummaryDTO> myAccommodations = accommodationService.getMyAccommodations(providerId);
+                List<AccommodationInfoHostDTO> myAccommodations = accommodationService.getMyAccommodations(providerId);
 
-                ApiResponse<List<AccommodationSummaryDTO>> response = new ApiResponse<>(true,
+                ApiResponse<List<AccommodationInfoHostDTO>> response = new ApiResponse<>(true,
                                 "Lấy danh sách cơ sở lưu trú của Host thành công",
                                 myAccommodations);
 
